@@ -1,0 +1,23 @@
+location_id,borough_name,zone_name,service_zone
+1,Manhattan,Midtown East,Yellow Zone
+2,Manhattan,Midtown West,Yellow Zone
+3,Manhattan,Upper East Side,Yellow Zone
+4,Manhattan,Upper West Side,Yellow Zone
+5,Manhattan,Chelsea,Yellow Zone
+6,Manhattan,SoHo,Yellow Zone
+7,Manhattan,Financial District,Yellow Zone
+8,Brooklyn,Williamsburg,Boro Zone
+9,Brooklyn,Downtown Brooklyn,Boro Zone
+10,Brooklyn,Park Slope,Boro Zone
+11,Queens,Long Island City,Boro Zone
+12,Queens,Astoria,Boro Zone
+13,Queens,JFK Airport,Airports
+14,Queens,LaGuardia Airport,Airports
+15,Bronx,Yankee Stadium,Boro Zone
+16,Bronx,Fordham,Boro Zone
+17,Staten Island,St. George,Boro Zone
+18,Brooklyn,Brooklyn Heights,Boro Zone
+19,Manhattan,Harlem,Yellow Zone
+20,Queens,Flushing,Boro Zone
+21,New Jersey,Newark Airport,Airports
+22,New Jersey,Hoboken Terminal,Boro Zone

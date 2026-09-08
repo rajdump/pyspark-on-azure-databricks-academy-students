@@ -1,0 +1,22 @@
+{"location_id": 1, "borough_name": "Manhattan", "zone_name": "Midtown East", "service_zone": "Yellow Zone"}
+{"location_id": 2, "borough_name": "Manhattan", "zone_name": "Midtown West", "service_zone": "Yellow Zone"}
+{"location_id": 3, "borough_name": "Manhattan", "zone_name": "Upper East Side", "service_zone": "Yellow Zone"}
+{"location_id": 4, "borough_name": "Manhattan", "zone_name": "Upper West Side", "service_zone": "Yellow Zone"}
+{"location_id": 5, "borough_name": "Manhattan", "zone_name": "Chelsea", "service_zone": "Yellow Zone"}
+{"location_id": 6, "borough_name": "Manhattan", "zone_name": "SoHo", "service_zone": "Yellow Zone"}
+{"location_id": 7, "borough_name": "Manhattan", "zone_name": "Financial District", "service_zone": "Yellow Zone"}
+{"location_id": 8, "borough_name": "Brooklyn", "zone_name": "Williamsburg", "service_zone": "Boro Zone"}
+{"location_id": 9, "borough_name": "Brooklyn", "zone_name": "Downtown Brooklyn", "service_zone": "Boro Zone"}
+{"location_id": 10, "borough_name": "Brooklyn", "zone_name": "Park Slope", "service_zone": "Boro Zone"}
+{"location_id": 11, "borough_name": "Queens", "zone_name": "Long Island City", "service_zone": "Boro Zone"}
+{"location_id": 12, "borough_name": "Queens", "zone_name": "Astoria", "service_zone": "Boro Zone"}
+{"location_id": 13, "borough_name": "Queens", "zone_name": "JFK Airport", "service_zone": "Airports"}
+{"location_id": 14, "borough_name": "Queens", "zone_name": "LaGuardia Airport", "service_zone": "Airports"}
+{"location_id": 15, "borough_name": "Bronx", "zone_name": "Yankee Stadium", "service_zone": "Boro Zone"}
+{"location_id": 16, "borough_name": "Bronx", "zone_name": "Fordham", "service_zone": "Boro Zone"}
+{"location_id": 17, "borough_name": "Staten Island", "zone_name": "St. George", "service_zone": "Boro Zone"}
+{"location_id": 18, "borough_name": "Brooklyn", "zone_name": "Brooklyn Heights", "service_zone": "Boro Zone"}
+{"location_id": 19, "borough_name": "Manhattan", "zone_name": "Harlem", "service_zone": "Yellow Zone"}
+{"location_id": 20, "borough_name": "Queens", "zone_name": "Flushing", "service_zone": "Boro Zone"}
+{"location_id": 21, "borough_name": "New Jersey", "zone_name": "Newark Airport", "service_zone": "Airports"}
+{"location_id": 22, "borough_name": "New Jersey", "zone_name": "Hoboken Terminal", "service_zone": "Boro Zone"}

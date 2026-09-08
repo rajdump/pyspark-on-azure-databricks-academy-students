@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# uv / venv
+.venv/
+venv/
+
+# Local tooling caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.cache/
+
+# Environment / secrets — never commit real values
+.env
+.databrickscfg
+
+# Databricks CLI / Asset Bundle local state
+.databricks/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+.databricks
+
+# Module 11 DV lab Parquet (~300 MB). Local / Databricks Git folder / ADLS only.
+data/lab/*.parquet

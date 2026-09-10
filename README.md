@@ -62,6 +62,12 @@ deployable batch capstone — see the [phase list](COURSE_MODULES.md#phases).
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
 - **Before Module 5:** Review the [module-specific environment and privilege requirements](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01).
 
+## License
+
+Copyright (c) 2026 Rajsekhar. All rights reserved. You may clone the
+repository and run the notebooks for your own learning. You may not
+republish or sell the materials as your own course. See [`LICENSE`](LICENSE).
+
 
 ## This repository
 
@@ -74,3 +80,5 @@ installed to complete the labs.
 `data/lab/fare_dv_lab.parquet` (~300 MB) is not stored in Git. Your instructor
 will share a download link before Module 11 notebook **00**. Place the file at
 `data/lab/fare_dv_lab.parquet`.
+
+See [`LICENSE`](LICENSE) for permitted use.

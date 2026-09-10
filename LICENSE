@@ -1,0 +1,20 @@
+Copyright (c) 2026 Rajsekhar
+
+All rights reserved.
+
+This repository contains the PySpark on Azure Databricks Academy course
+materials (notebooks, data files, and documentation).
+
+You MAY:
+  - clone this repository
+  - run the notebooks in Azure Databricks for your own learning
+  - complete the exercises as a student of this course
+
+You may NOT, without prior written permission:
+  - republish, sell, or redistribute the materials as your own course
+  - remove this notice
+  - use the materials to train a competing commercial offering
+
+The rideshare dataset is a teaching sample created for this course.
+
+This license does not grant any trademark rights in the course name.

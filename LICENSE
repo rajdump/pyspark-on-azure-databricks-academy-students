@@ -5,12 +5,16 @@ All rights reserved.
 This repository contains the PySpark on Azure Databricks Academy course
 materials (notebooks, data files, and documentation).
 
+These materials are licensed **only for personal learning**.
+
 You MAY:
   - clone this repository
   - run the notebooks in Azure Databricks for your own learning
   - complete the exercises as a student of this course
 
 You may NOT, without prior written permission:
+  - use the materials for any purpose other than personal learning
+  - use them in production, commercial, or paid training
   - republish, sell, or redistribute the materials as your own course
   - remove this notice
   - use the materials to train a competing commercial offering

@@ -64,9 +64,10 @@ deployable batch capstone — see the [phase list](COURSE_MODULES.md#phases).
 
 ## License
 
-Copyright (c) 2026 Rajsekhar. All rights reserved. You may clone the
-repository and run the notebooks for your own learning. You may not
-republish or sell the materials as your own course. See [`LICENSE`](LICENSE).
+Copyright (c) 2026 Rajsekhar. All rights reserved. These materials are for
+**personal learning only**. You may clone the repository and run the
+notebooks as a student. You may not use them for production, commercial
+training, or republish them as your own course. See [`LICENSE`](LICENSE).
 
 
 ## This repository
@@ -81,4 +82,4 @@ installed to complete the labs.
 will share a download link before Module 11 notebook **00**. Place the file at
 `data/lab/fare_dv_lab.parquet`.
 
-See [`LICENSE`](LICENSE) for permitted use.
+See [`LICENSE`](LICENSE). Use is limited to personal learning.

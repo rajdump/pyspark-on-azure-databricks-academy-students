@@ -407,26 +407,6 @@ print("original df columns:         ", df.columns)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named `my_df` and complete:
-# MAGIC
-# MAGIC 1. Project and reorder a few columns with `select`.
-# MAGIC 2. Add at least one derived column with `withColumn` or `withColumns`
-# MAGIC    using `F.col` (and `F.when` or `F.lit` if useful).
-# MAGIC 3. Rename one column and drop one column you no longer need.
-# MAGIC 4. Confirm the original `my_df` columns are unchanged after your chain.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (a handful of rows). Use explicit column names
-# MAGIC from the `trip` table where possible.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's reshape path:

@@ -251,27 +251,6 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC The table has already been restored, so trip **1002** is back in the current table.
-# MAGIC
-# MAGIC Use PySpark `versionAsOf` to read version **4**, where trip **1002** was deleted.
-# MAGIC
-# MAGIC Then compare version **4** with the current table.
-# MAGIC
-# MAGIC **Expected:**
-# MAGIC
-# MAGIC - Version **4** → **3 rows**
-# MAGIC - Current table → **4 rows**
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Every committed change creates a new version of the Delta table.

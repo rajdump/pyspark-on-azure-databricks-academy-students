@@ -361,30 +361,6 @@ roundtrip_typed.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a small practice extract without reusing **`zone_subset`**:
-# MAGIC
-# MAGIC 1. Read **`zone_lookup.json`** again with the full **`zone_schema_ddl`** (or
-# MAGIC    **`zone_schema`**) into a new DataFrame (do not reuse **`zone`** or
-# MAGIC    **`zone_subset`**).
-# MAGIC 2. **`select`** exactly these three columns: **`location_id`**, **`zone_name`**,
-# MAGIC    **`service_zone`**.
-# MAGIC 3. Write the result to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/zone_exercise/`**
-# MAGIC    with **`.mode("overwrite")`** (use either **`format("json").save(...)`** or
-# MAGIC    **`.json(...)`** — same as section 9).
-# MAGIC 4. Re-read the written folder with an explicit schema for those three columns
-# MAGIC    and print the schema. Confirm **`location_id`** is **`int`** and the string
-# MAGIC    columns are **`string`**, not mis-inferred types.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **JSON syntax** — **`.json(path)`** shorthand and

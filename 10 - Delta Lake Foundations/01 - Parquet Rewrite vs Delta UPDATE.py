@@ -253,50 +253,6 @@ display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Finance also needs trip **1001**'s tip changed from **3.00** to **4.00**
-# MAGIC on the **Delta** folder you just updated.
-# MAGIC
-# MAGIC - Use `UPDATE` on `` delta.`<path>` `` (same path as the worked example)
-# MAGIC - Do not rewrite Parquet
-# MAGIC - Do not touch `fare_log_delta/`
-# MAGIC
-# MAGIC **Expected:** still **4** rows; trip **1001** tip is **4.00**; trip
-# MAGIC **1003** stays **10.00**.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Hint:** Copy the worked `UPDATE` cell. Change `trip_id` to **1001** and
-# MAGIC `tip_amount` to **4.00**. Then `spark.read.format("delta").load(...)`
-# MAGIC and confirm `.count()` is **4**.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Solution** (commented out — un-comment if you want to compare)
-
-# COMMAND ----------
-
-# spark.sql(
-#     f"""
-#     UPDATE delta.`{delta_path}`
-#     SET tip_amount = 4.00
-#     WHERE trip_id = 1001
-#     """
-# )
-# exercise_check = spark.read.format("delta").load(delta_path)
-# print(f"rows = {exercise_check.count()} (expect 4)")
-# display(exercise_check.orderBy("trip_id"))
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Parquet row fixes are **read → `when` → overwrite**. There is no

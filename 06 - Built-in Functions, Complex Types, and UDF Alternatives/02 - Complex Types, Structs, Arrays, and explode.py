@@ -180,27 +180,6 @@ drivers_flat.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build `drivers_exercise` from `drivers`:
-# MAGIC
-# MAGIC 1. Keep `driver_id` and `license_number`.
-# MAGIC 2. Select `vehicle.make` and `vehicle.body_type` as `vehicle_make` and
-# MAGIC    `vehicle_body_type`.
-# MAGIC 3. Use `F.size` to create `assigned_trip_count`.
-# MAGIC 4. Use `F.explode_outer` on `trips_assigned.trip_id` to create `trip_id`.
-# MAGIC 5. Display the result. Do not write it.
-# MAGIC
-# MAGIC This repeats the struct-field, array, and flattening patterns with different
-# MAGIC selected fields and uses `explode_outer` instead of the curated write's `explode`.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Read XML with `format("xml")` and `rowTag="driver"` to create one driver row

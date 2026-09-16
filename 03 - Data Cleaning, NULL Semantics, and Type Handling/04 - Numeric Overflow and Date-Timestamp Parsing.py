@@ -492,30 +492,6 @@ operations_review.show(truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named **`exercise_df`** and
-# MAGIC complete:
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** and **`trip_date`** as
-# MAGIC    **`string`** (aligned with the `trip_time` table). Include at least one
-# MAGIC    valid ISO-shaped date and one invalid date string.
-# MAGIC 2. Add **`trip_date_parsed`** with **`try_to_date`** (or
-# MAGIC    **`try_cast(... AS DATE)`**) and a matching format pattern.
-# MAGIC 3. Filter to rows where source **`trip_date`** is not **`NULL`** but
-# MAGIC    **`trip_date_parsed`** is **`NULL`** — the rejected-row pattern from
-# MAGIC    Notebook 03.
-# MAGIC 4. Show the rejected rows.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (three or four rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's overflow and parsing path:

@@ -207,40 +207,6 @@ print("Temp view registered: trip_tip_band")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Return Manhattan trips that have a known tip and assign the same
-# MAGIC `tip_amount_band` used in Section 4.
-# MAGIC
-# MAGIC ### Requirements
-# MAGIC
-# MAGIC - Use SQL
-# MAGIC - Keep only `pickup_borough = 'Manhattan'`
-# MAGIC - Exclude rows where `tip_amount` is NULL
-# MAGIC - Reuse the Section 4 `CASE WHEN` bands
-# MAGIC - Add one SQL comment explaining why `%sql` is a good entry point here
-# MAGIC
-# MAGIC **Expected:** **43 rows**
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- %sql because ...
-# MAGIC SELECT
-# MAGIC   trip_id,
-# MAGIC   tip_amount,
-# MAGIC   CASE
-# MAGIC     WHEN tip_amount IS NULL THEN 'no_data'
-# MAGIC     -- TODO: finish absolute tip_amount_band CASE (same bands as Section 4)
-# MAGIC     ELSE 'TODO'
-# MAGIC   END AS tip_amount_band
-# MAGIC FROM rideshare_dev.processed.trip_enriched
-# MAGIC WHERE 1 = 0  -- TODO: replace with Manhattan + tip_amount IS NOT NULL
-# MAGIC -- Expected: 43 rows
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC The same Spark data can move between SQL and the DataFrame API without

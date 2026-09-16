@@ -144,27 +144,6 @@ review_payments.explain(mode="extended")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build an isolated chain (do not reuse DataFrames from earlier sections):
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** (`bigint`),
-# MAGIC    **`payment_method`** (`string`), **`base_fare_amount`**
-# MAGIC    (`decimal(10,2)`), and **`tip_amount`** (`decimal(10,2)`). Use three or
-# MAGIC    four small rows.
-# MAGIC 2. Add one or two narrow transformations first, then put the filter last.
-# MAGIC 3. Call **`.explain(mode="extended")`** on the chain.
-# MAGIC 4. Add a short note about where the optimized plan differs from the written
-# MAGIC    order.
-# MAGIC 5. Call **`show()`** once after you finish reading the plan.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's path:

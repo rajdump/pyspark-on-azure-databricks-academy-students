@@ -319,59 +319,6 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC ### Q1 — Filter aggregated tiers
-# MAGIC
-# MAGIC Using **driven trips only**, return tiers that meet both conditions:
-# MAGIC
-# MAGIC - more than **20 trips**
-# MAGIC - total base fare greater than **300**
-# MAGIC
-# MAGIC Use table aliases, `JOIN`, `CASE WHEN`, `GROUP BY`, and a compound `HAVING`
-# MAGIC condition.
-# MAGIC
-# MAGIC **Expected:** **2 rows**
-# MAGIC
-# MAGIC - `standard` — 64 trips
-# MAGIC - `other` — 21 trips
-# MAGIC
-# MAGIC ### Q2 — Find undriven trips
-# MAGIC
-# MAGIC Use `NOT EXISTS` to return trips that have no driver assignment.
-# MAGIC
-# MAGIC **Expected:** **6 `trip_id`s** — `101–106`.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Q1: compound HAVING on driven trips (expect 2 rows: standard, other)
-# MAGIC SELECT
-# MAGIC   CASE
-# MAGIC     WHEN t.service_type = 'PREMIUM' THEN 'high'
-# MAGIC     WHEN t.service_type IN ('STANDARD', 'XL') THEN 'standard'
-# MAGIC     ELSE 'other'
-# MAGIC   END AS tier,
-# MAGIC   COUNT(*) AS trip_count,
-# MAGIC   SUM(t.base_fare_amount) AS total_base_fare
-# MAGIC FROM rideshare_dev.processed.trip_enriched AS t
-# MAGIC INNER JOIN rideshare_dev.processed.trip_driver_assignment AS d
-# MAGIC   ON t.trip_id = d.trip_id
-# MAGIC GROUP BY tier
-# MAGIC HAVING 1 = 0  -- TODO: compound HAVING (trip count and total base fare)
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Q2: undriven trip_ids via NOT EXISTS (expect 6 rows: 101–106)
-# MAGIC SELECT t.trip_id
-# MAGIC FROM rideshare_dev.processed.trip_enriched AS t
-# MAGIC WHERE 1 = 0  -- TODO: NOT EXISTS (... trip_driver_assignment ...)
-# MAGIC ORDER BY t.trip_id
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC We built one SQL query from trip-level data into a driven-trip tier summary:

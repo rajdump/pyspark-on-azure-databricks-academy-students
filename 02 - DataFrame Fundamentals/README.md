@@ -67,11 +67,6 @@ keep examples tiny (2–3 rows).
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Medium exercise on inferred vs explicit schema inspection, on a slightly
-different rideshare DataFrame.
-
 ### Next
 
 `02 - Inspecting DataFrames`
@@ -99,10 +94,6 @@ work.
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Short hands-on on a slightly different rideshare DataFrame.
 
 ### Next
 
@@ -133,10 +124,6 @@ reuse.
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Short hands-on on a slightly different rideshare DataFrame.
-
 ### Next
 
 `04 - SQL Expressions in DataFrame Code`
@@ -164,10 +151,6 @@ errors; choose and reuse related rules consistently.
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Short hands-on on a slightly different rideshare DataFrame.
-
 ### Next
 
 `05 - Filtering Rows`
@@ -193,10 +176,6 @@ Keep rows with `filter` / `where`, including intro NULL and blank traps.
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Short hands-on on a slightly different rideshare DataFrame.
 
 ### Next
 
@@ -225,10 +204,6 @@ not serverless; session vs global vs persisted table.
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Short hands-on on a slightly different rideshare DataFrame.
 
 ### Next
 

@@ -281,36 +281,6 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Within each borough, which zones rank highest by **`trip_count`**?
-# MAGIC Keep only zones with at least **3** trips, then keep the Top **2**.
-# MAGIC
-# MAGIC | clause | job |
-# MAGIC |---|---|
-# MAGIC | `WHERE trip_count >= 3` | remove low-volume zones first |
-# MAGIC | `ROW_NUMBER() ... ORDER BY trip_count DESC` | rank within each borough |
-# MAGIC | `QUALIFY ... <= 2` | keep `rn` 1 and 2 |
-# MAGIC
-# MAGIC **Expected:** **8 rows** (Staten Island is removed by `WHERE`).
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Top-2 by trip_count per borough, only zones with trip_count >= 3 (expect 8)
-# MAGIC SELECT
-# MAGIC   pickup_borough,
-# MAGIC   pickup_zone,
-# MAGIC   trip_count
-# MAGIC   -- TODO: ROW_NUMBER() ... AS rn
-# MAGIC FROM rideshare_dev.processed.kpi_zone_performance
-# MAGIC WHERE 1 = 0  -- TODO: trip_count >= 3
-# MAGIC -- TODO: QUALIFY ... <= 2
-# MAGIC ORDER BY pickup_borough, trip_count DESC
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC **Part 1 — rank zones**

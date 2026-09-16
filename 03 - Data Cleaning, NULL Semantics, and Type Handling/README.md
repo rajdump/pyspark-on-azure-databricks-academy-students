@@ -59,10 +59,6 @@ reusable eligibility / quality predicate chain.
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-NULL-safe filter on a slightly different messy DataFrame.
-
 ### Next
 
 `02 - Missing, Blank, and Sentinel Values`
@@ -89,10 +85,6 @@ Normalize missing shapes to real `NULL` before drop/fill.
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Sentinel normalize on a slightly different messy DataFrame.
-
 ### Next
 
 `03 - Safe Type Casting`
@@ -116,10 +108,6 @@ Sentinel normalize on a slightly different messy DataFrame.
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Rejected-cast detection on a slightly different messy DataFrame.
 
 ### Next
 
@@ -147,10 +135,6 @@ Cast / arithmetic overflow; `try_sum` / `try_avg`; `to_date` /
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Safe date parse on a slightly different messy DataFrame.
 
 ### Next
 

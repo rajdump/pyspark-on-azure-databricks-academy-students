@@ -107,11 +107,6 @@ light **`payment`** decimals); no curated write — **`03`** re-reads landing.
   (and optional light **`payment`**)
 - Output: none (no curated write)
 
-### Exercise
-
-Short hands-on that repeats the demonstrated pattern on slightly different
-columns or values.
-
 ### Next
 
 `02 - Complex Types, Structs, Arrays, and explode`
@@ -141,11 +136,6 @@ Landing **`drivers`** XML with **`rowTag`** (same as Module 5
 - Input: landing **`drivers`**
 - Output: `/Volumes/rideshare_dev/processed/output_files/curated/drivers_flat/`
   — one row per **`driver_id`** + **`trip_id`**; trips **1–100**. See Dataset.
-
-### Exercise
-
-Short hands-on that repeats the demonstrated pattern on slightly different
-columns or values.
 
 ### Next
 
@@ -179,11 +169,6 @@ enrichment/cleaning columns only here; write
 - Output: curated **`trip/`** (106 rows) and **`payment/`** (105 rows). See
   Dataset.
 
-### Exercise
-
-Short hands-on that repeats the demonstrated pattern on slightly different
-columns or values.
-
 ### Next
 
 `04 - Built-ins First, When (Not) to Use UDFs`
@@ -210,11 +195,6 @@ outputs.
 
 - Input: a small column-rule demo (not a curated overwrite)
 - Output: none — do not overwrite curated outputs
-
-### Exercise
-
-Short hands-on that repeats the demonstrated pattern on slightly different
-columns or values.
 
 ### Boundaries
 

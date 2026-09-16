@@ -462,31 +462,6 @@ roundtrip_typed.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a small practice extract without reusing **`trip_subset`**:
-# MAGIC
-# MAGIC 1. Read **`trip.csv`** again with the full **`trip_schema_ddl`** (or
-# MAGIC    **`trip_schema`**) into a new DataFrame (do not reuse **`trip`** or
-# MAGIC    **`trip_subset`**).
-# MAGIC 2. **`select`** exactly these three columns: **`trip_id`**,
-# MAGIC    **`dropoff_location_id`**, **`ride_duration_mins`**.
-# MAGIC 3. Write the result to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/trip_exercise/`**
-# MAGIC    with **`header=True`** and **`.mode("overwrite")`** (use either
-# MAGIC    **`format("csv").save(...)`** or **`.csv(...)`** — same as section 8).
-# MAGIC 4. Re-read the written folder with an explicit schema (DDL or
-# MAGIC    **`StructType`**) for those three columns and print the schema. Confirm
-# MAGIC    **`trip_id`** is **`bigint`** and the two integer columns are **`int`**,
-# MAGIC    not **`string`**.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **CSV syntax** — **`.csv(path)`** / **`.csv(...)`** shorthand and

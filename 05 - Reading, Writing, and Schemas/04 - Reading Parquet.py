@@ -356,29 +356,6 @@ roundtrip_typed.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a small practice extract without reusing **`trip_time_subset`**:
-# MAGIC
-# MAGIC 1. Read **`trip_time.parquet`** again with the full **`trip_time_schema_ddl`**
-# MAGIC    (or **`trip_time_schema`**) into a new DataFrame (do not reuse
-# MAGIC    **`trip_time`** or **`trip_time_subset`**).
-# MAGIC 2. **`select`** exactly these two columns: **`trip_id`**, **`trip_date`**.
-# MAGIC 3. Write the result to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/trip_time_exercise/`**
-# MAGIC    with **`.mode("overwrite")`** (use either **`format("parquet").save(...)`**
-# MAGIC    or **`.parquet(...)`** — same as section 7).
-# MAGIC 4. Re-read the written folder with an explicit schema for those two columns
-# MAGIC    and print the schema. Confirm **`trip_id`** is **`bigint`** and
-# MAGIC    **`trip_date`** is **`date`**.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **Parquet syntax** — **`.parquet(path)`** shorthand and

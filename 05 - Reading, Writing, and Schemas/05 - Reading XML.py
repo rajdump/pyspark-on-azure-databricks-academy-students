@@ -212,29 +212,6 @@ roundtrip.show(3, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a small practice extract without reusing **`drivers_subset`**:
-# MAGIC
-# MAGIC 1. Read **`drivers.xml`** again with **`rowTag="driver"`** into a new
-# MAGIC    DataFrame (do not reuse **`drivers`** or **`drivers_subset`**).
-# MAGIC 2. **`select`** exactly these columns: **`driver_id`**, **`license_number`**,
-# MAGIC    and **`vehicle.year`** aliased as **`vehicle_year`**. Do **not** call
-# MAGIC    **`explode`**.
-# MAGIC 3. Write the result to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/drivers_exercise/`**
-# MAGIC    with **`.mode("overwrite")`** as JSON
-# MAGIC    (**`format("json").save(...)`**).
-# MAGIC 4. Re-read the written folder and print the schema. Confirm the three
-# MAGIC    column names above are present.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **XML read** — use **`format("xml")`** with **`.option("rowTag", ...)`**;

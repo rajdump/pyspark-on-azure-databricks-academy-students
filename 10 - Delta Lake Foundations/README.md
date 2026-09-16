@@ -63,7 +63,7 @@ tip_amount decimal(10,2)
 
 | trip_id | service_type | payment_method | base_fare_amount | tip_amount | Lab use |
 |---|---|---|---:|---:|---|
-| 1001 | STANDARD | card | 20.00 | 3.00 | 01 exercise: tip → **4.00** |
+| 1001 | STANDARD | card | 20.00 | 3.00 | — |
 | 1002 | SHARED | cash | 15.00 | 0.00 | 02 and 04: deleted |
 | 1003 | PREMIUM | card | 40.00 | 6.00 | Worked `UPDATE` in 01, 02, and 04: tip → **10.00** |
 | 1004 | STANDARD | wallet | 25.00 | 2.50 | 02 and 04: second write |
@@ -117,10 +117,6 @@ tables such as `trip_enriched` are also Delta under `abfss://`.
 - Output: `fare_correction_parquet/`, `fare_correction_delta/`
 - Expected rows: **4** after the worked `UPDATE` (1003 tip **10.00**)
 
-### Exercise
-
-`UPDATE` **1001** **3.00 → 4.00**; still **4** rows.
-
 ### Boundaries
 
 No ACID, time travel, `DESCRIBE HISTORY`, `DELETE`, `MERGE`, `VACUUM`, DV
@@ -156,10 +152,6 @@ files). `DESCRIBE HISTORY` on the path. Stop before time travel.
 
 - Output: `fare_log_delta/`
 - Expected rows: v0 **0**; v1 **3**; v2 **4**; v3 **4**; v4 **3**
-
-### Exercise
-
-An exercise does not apply.
 
 ### Boundaries
 
@@ -212,10 +204,6 @@ schema overrides catalog; `ALTER CATALOG` / `ALTER SCHEMA RETAIN DROPPED`
 - Expected rows: empty CREATE **0**; after INSERT **4**; after UNDROP **4**;
   after external re-register **4**
 
-### Exercise
-
-An exercise does not apply.
-
 ### Boundaries
 
 No `UPDATE`, `DESCRIBE HISTORY`, `OPTIMIZE`, `VACUUM`, `VERSION AS OF` /
@@ -258,10 +246,6 @@ Retention: 30-day history vs 7-day `VACUUM` eligibility; files stay until
 - Output: `rideshare_dev.processed.fare_timetravel_lab`
 - Important values: after RESTORE TO VERSION AS OF 3, 1002 is back and 1003
   tip is **10.00**
-
-### Exercise
-
-PySpark `versionAsOf` **4** after restore (**3** rows); current still **4**.
 
 ### Boundaries
 

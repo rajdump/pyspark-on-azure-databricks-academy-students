@@ -340,26 +340,6 @@ print("original df row count: ", df.count())
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named `my_df` and complete:
-# MAGIC
-# MAGIC 1. Create `my_df` with explicit `trip`-aligned column names and types
-# MAGIC    (include at least one `NULL` or empty string if useful).
-# MAGIC 2. Store one reusable filter condition in a variable (for example
-# MAGIC    `is_usable` above, or a distance / service-type rule).
-# MAGIC 3. Filter with `filter` or `where` using that condition.
-# MAGIC 4. Show the filtered result.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (a handful of rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's filter path:

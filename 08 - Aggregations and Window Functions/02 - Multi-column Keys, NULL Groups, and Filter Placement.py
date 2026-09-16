@@ -41,7 +41,6 @@
 # MAGIC | 1 | `countDistinct` vs `groupBy` | Predict the group count before running |
 # MAGIC | 1a | Composite key | Only pairs that exist in the data become rows |
 # MAGIC | 2a–2d | Filter placement | Compare filtering input rows with filtering groups |
-# MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
 # COMMAND ----------
 
 # DBTITLE 1,Setup
@@ -221,90 +220,6 @@ borough_tips.orderBy(F.col("total_tip").desc()).show()
 
 # Keep groups by filtering the alias created in agg()
 borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise
-# MAGIC %md
-# MAGIC ## Exercise — Build borough summaries
-# MAGIC
-# MAGIC ### Step 1 — Create one row per pickup borough
-# MAGIC
-# MAGIC 1. Predict the number of output rows.
-# MAGIC 2. Group by `pickup_borough`.
-# MAGIC 3. Create these columns:
-# MAGIC - `trip_count` = all trips
-# MAGIC - `dated_trip_count` = non-NULL `trip_date`
-# MAGIC - `total_base_fare` = sum(`base_fare_amount`) rounded to 2
-# MAGIC - `avg_distance_miles` = avg(`trip_distance_miles`) rounded to 2
-# MAGIC
-# MAGIC 4. Run the cell to compare your prediction with the actual row count.
-
-# COMMAND ----------
-
-# Replace None with your predicted row count
-predicted_borough_groups = None
-
-# Complete the three missing aggregate expressions
-borough_summary = trip_enriched.groupBy("pickup_borough").agg(
-    F.count("*").alias("trip_count"),
-    # TODO: count non-NULL trip_date values as dated_trip_count
-    # TODO: sum and round base_fare_amount as total_base_fare
-    # TODO: average and round trip_distance_miles as avg_distance_miles
-)
-
-actual_borough_groups = borough_summary.count()
-prediction_matches = "✓" if predicted_borough_groups == actual_borough_groups else "✗"
-print(f"{prediction_matches} predicted={predicted_borough_groups}, actual={actual_borough_groups}")
-
-borough_summary.orderBy(F.col("trip_count").desc()).show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 2 - Filter groups
-# MAGIC %md
-# MAGIC ### Step 2 — Keep boroughs with more than 10 trips
-# MAGIC
-# MAGIC 1. Filter `borough_summary` using the `trip_count` alias.
-# MAGIC 2. Display the remaining boroughs.
-
-# COMMAND ----------
-
-# Add a filter on the aggregated trip_count column
-busy_boroughs = borough_summary  # TODO: keep only trip_count > 10
-
-busy_boroughs.orderBy(F.col("trip_count").desc()).show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 3 - Composite key
-# MAGIC %md
-# MAGIC ### Step 3 — Add payment method to the grouping key
-# MAGIC
-# MAGIC 1. Predict the number of observed (`pickup_borough`, `payment_method`) pairs.
-# MAGIC 2. Group the original `trip_enriched` DataFrame by both columns.
-# MAGIC 3. Count the trips in each pair.
-# MAGIC 4. Run the cell to compare your prediction with the actual row count.
-# MAGIC
-# MAGIC The upper bound is `5 × 6 = 30`, but only pairs present in the data appear.
-
-# COMMAND ----------
-
-# Replace None with your predicted row count
-predicted_pair_groups = None
-
-# Add payment_method as the second grouping key
-borough_payment_summary = trip_enriched.groupBy(
-    "pickup_borough",  # TODO: add payment_method
-).agg(
-    F.count("*").alias("trip_count"),
-)
-
-actual_pairs = borough_payment_summary.count()
-pair_prediction_matches = "✓" if predicted_pair_groups == actual_pairs else "✗"
-print(f"{pair_prediction_matches} predicted={predicted_pair_groups}, actual={actual_pairs}")
-
-borough_payment_summary.orderBy(F.col("trip_count").desc()).show(40)
 
 # COMMAND ----------
 

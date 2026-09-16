@@ -126,17 +126,12 @@ Output grain and basic `groupBy().agg()` — no write.
 ### Lesson flow
 
 Output grain; `groupBy().agg()` + aliasing; bare non-key column fails
-(window → **05**); three counts; `sum`/`avg` skip NULLs + `F.coalesce`;
-exercise — per-`payment_method`.
+(window → **05**); three counts; `sum`/`avg` skip NULLs + `F.coalesce`.
 
 ### Expected state
 
 - Input: `trip_enriched`
 - Output: none (no write)
-
-### Exercise
-
-Per-`payment_method` aggregation.
 
 ### Next
 
@@ -157,17 +152,12 @@ NULL key groups vs `countDistinct`, and `WHERE` vs `HAVING`.
 
 ### Lesson flow
 
-NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`;
-exercise — borough + HAVING, then composite key.
+NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`.
 
 ### Expected state
 
 - Input: `trip_enriched`
 - Output: none (no write)
-
-### Exercise
-
-Borough + HAVING, then composite key.
 
 ### Next
 
@@ -194,10 +184,6 @@ Collection aggregates, percentiles, and distinct counts.
 - Input: `trip_enriched`, `trip_driver_assignment`
 - Output: none (no write)
 
-### Exercise
-
-Short hands-on on the demonstrated aggregate pattern.
-
 ### Next
 
 `04 - Pivot`
@@ -220,10 +206,6 @@ Reshape grouped results with `pivot`.
 
 - Input: `trip_enriched`
 - Output: none (no write)
-
-### Exercise
-
-Short hands-on on `pivot`.
 
 ### Next
 
@@ -250,10 +232,6 @@ filter-after-rank preview → **07**.
 - Input: `trip_enriched`, `trip_driver_assignment`
 - Output: none (no write)
 
-### Exercise
-
-Short hands-on on window ranking.
-
 ### Next
 
 `06 - Running Totals and Lag and Lead`
@@ -278,10 +256,6 @@ daily running totals; `lag` / `lead`.
 
 - Input: `trip_enriched`
 - Output: none (no write)
-
-### Exercise
-
-Short hands-on on running totals or `lag` / `lead`.
 
 ### Next
 
@@ -311,10 +285,6 @@ selection policy (`row_number <= N` vs `rank <= N`, secondary sort);
 - Input: `trip_enriched`, `trip_driver_assignment`
 - Output: none (no write)
 
-### Exercise
-
-Short hands-on on Top-N or sampling.
-
 ### Next
 
 `08 - Build KPI Tables`
@@ -339,10 +309,6 @@ see Shared paths and assets.
 - Input: both managed tables (`trip_enriched`, `trip_driver_assignment`)
 - Output: the three `kpi_*` tables at the Dataset grain/row counts.
   Formulas: Shared paths and assets.
-
-### Exercise
-
-An exercise does not apply — this notebook is write-only.
 
 ### Next
 

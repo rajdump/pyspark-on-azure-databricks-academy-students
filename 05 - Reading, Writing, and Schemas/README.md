@@ -103,10 +103,6 @@ verify.
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/`; catalog
   `rideshare_dev`; external location `el_rideshare_dev`; schemas and volumes
 
-### Exercise
-
-Short hands-on on the landing you just created.
-
 ### Next
 
 `02 - Reading CSV`
@@ -133,10 +129,6 @@ reshape; practice write.
 - Output: practice write under
   `/Volumes/rideshare_dev/processed/output_files/practice/{output_name}/`
 
-### Exercise
-
-Short hands-on on the CSV read/write pattern.
-
 ### Next
 
 `03 - Reading JSON`
@@ -158,10 +150,6 @@ Read **`zone_lookup`** (JSON Lines) from landing.
 ### Expected state
 
 - Input: `/Volumes/rideshare_dev/landing/source_files/zone_lookup/`
-
-### Exercise
-
-Short hands-on on the JSON read.
 
 ### Next
 
@@ -185,10 +173,6 @@ Read **`trip_time`** from landing.
 
 - Input: `/Volumes/rideshare_dev/landing/source_files/trip_time/`
 
-### Exercise
-
-Short hands-on on the Parquet read.
-
 ### Next
 
 `05 - Reading XML`
@@ -210,10 +194,6 @@ Read **`drivers`** with **`rowTag`** only — no **`explode`** (Module 6).
 ### Expected state
 
 - Input: `/Volumes/rideshare_dev/landing/source_files/drivers/`
-
-### Exercise
-
-Short hands-on on the XML read.
 
 ### Next
 
@@ -237,10 +217,6 @@ Read **`payment`** from landing (Avro copied in
 ### Expected state
 
 - Input: `/Volumes/rideshare_dev/landing/source_files/payment/`
-
-### Exercise
-
-Short hands-on on the Avro read.
 
 ### Next
 
@@ -276,10 +252,6 @@ alongside landing **`trip_time`** Parquet; deep Delta → Module 10.
   `/Volumes/rideshare_dev/processed/output_files/practice/`; managed table
   **`rideshare_dev.processed.trip_time_preview`**
 
-### Exercise
-
-Short hands-on on save modes / table preview.
-
 ### Next
 
 Module 6 `01 - Column Transforms with Built-in Functions`.
@@ -312,10 +284,6 @@ managed tables including Module 7/8 `saveAsTable` outputs).
 
 Not applicable — no persistent data state this notebook is required to leave
 behind. It removes objects created by this module and later writes.
-
-### Exercise
-
-An exercise does not apply — this is a cleanup/reset utility.
 
 ### Boundaries
 

@@ -226,28 +226,6 @@ df_struct.show(truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build one small rideshare DataFrame in two ways, then compare:
-# MAGIC
-# MAGIC 1. Create `my_df_inferred` from 3 rows + column names (no explicit schema).
-# MAGIC 2. Create `my_df_typed` from the same rows using an explicit DDL schema:
-# MAGIC    - `trip_id bigint`
-# MAGIC    - `service_type string`
-# MAGIC    - `pickup_location_id int`
-# MAGIC    - `trip_distance_miles decimal(8,2)`
-# MAGIC    - `ride_duration_mins int`
-# MAGIC 3. Run `printSchema()` on both DataFrames.
-# MAGIC 4. Show either DataFrame rows with `show(truncate=False)`.
-# MAGIC 5. In a short comment, note one schema difference you observe.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC You created DataFrames four ways and inspected each schema:

@@ -2,20 +2,19 @@
 
 ## Purpose
 
-Orient in the Azure Databricks workspace and build a mental model of how Spark
-executes code — before real data-engineering logic.
+Build a mental model of how Spark executes code, then work in the Databricks
+notebook — before real data-engineering logic.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
-- Explain what Spark is and why it exists (unified engine, distributed
-  processing) at a data-engineer level — not a distributed-systems deep dive
-- Describe the driver/executor model and how a job breaks into stages and tasks
-- Navigate the workspace: compute types and access modes, attach a notebook,
-  Databricks Runtime / LTS versioning
-- Work in a notebook: cells, magic commands, `dbutils`
-- Use the provided `SparkSession` (`spark`) and build a first DataFrame
+- Confirm the live `SparkSession` (`spark`), Spark version, and application
+  id on classic all-purpose compute
+- Work in a notebook: shared Python state, magics (`%sql`, `%fs`, `%sh`),
+  and `dbutils.fs`
+- Build a first DataFrame from Python rows and inspect it with `show` /
+  `display` / `printSchema`
 
 ## Prerequisites
 
@@ -28,102 +27,68 @@ Small **ad-hoc** rideshare-flavored DataFrames built in code (a few rows), not
 `data/raw/`. Volume file reading starts in Module 5. Full course dataset:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 
-## Notebook 01 — Introduction to Azure Databricks and the Workspace
+## Notebook 01 — Apache Spark Architecture
 
 ### Context
 
-First orientation in the Azure Databricks workspace, before Spark architecture
-or DataFrames.
+Proof lab after Notion 10. Confirm the live `spark` session on classic
+all-purpose compute.
 
 ### Learning objectives
 
-- Navigate the workspace browser, notebook editor, and compute attach
-- Explain Databricks Runtime / LTS, including the classic vs serverless
-  gotcha
+- Print that `spark` is a SparkSession
+- Print the Spark engine version
+- Print this session's Spark application id
 
 ### Lesson flow
 
-Workspace browser, notebook editor, compute attach; DBR / LTS (classic vs
-serverless gotcha).
+Read Notion 10; attach classic all-purpose; print `type(spark).__name__`,
+`spark.version`, and `spark.app.id`.
 
 ### Expected state
 
 Not applicable — no persistent data state.
 
-### Exercise
+### Boundaries
 
-Hands-on on the compute just attached: confirm attach, read the Spark version
-from the session, and record the Runtime version from the compute UI.
+No DataFrame examples, Spark UI, or jobs/stages lab. Architecture roles stay
+on Notion 10; jobs, stages, and tasks stay on Notion 11.
 
 ### Next
 
-`02 - Apache Spark Architecture and PySpark`
+`02 - Databricks Workspace and Notebook`
 
-## Notebook 02 — Apache Spark Architecture and PySpark
+## Notebook 02 — Databricks Workspace and Notebook
 
 ### Context
 
-Build the mental model of how Spark executes a request once compute is
-attached.
+Lab after Notion 12. Shared Python state, magics, and `dbutils.fs` on the
+attached compute.
 
 ### Learning objectives
 
-- Explain why Spark distributes work and how PySpark relates to Spark
-- Use the provided `SparkSession` (`spark`)
-- Describe driver/executors and jobs → stages → tasks
-- Observe one live request in the Spark UI on classic compute
+- Print a Python value defined in an earlier cell
+- Run a `%sql` cell and confirm SQL cannot see a Python local
+- Run `%sh` on the driver for a quick check
+- List files with `%fs` and `dbutils.fs`
 
 ### Lesson flow
 
-Why Spark distributes work; PySpark ↔ Spark; `SparkSession`; driver/executors
-(Diagram A); jobs → stages → tasks (Diagram B); `spark.range(...).count()`
-stand-in; Spark UI on classic all-purpose Standard.
+Shared Python state (`base_fare`); `%sql` hello; expected failing
+`%sql SELECT base_fare`; `%sh`; `%fs ls /databricks-datasets`;
+`dbutils.fs.ls`.
 
 ### Expected state
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Change the stand-in count request and find the new job in the Spark UI
-(job/stage/task).
+Expected failure: `%sql SELECT base_fare` (`AnalysisException`).
 
 ### Next
 
-`03 - Working with Notebooks`
+`03 - Your First DataFrame`
 
-## Notebook 03 — Working with Notebooks
-
-### Context
-
-How notebook cells, languages, magics, and `dbutils` share — and do not share
-— a live session.
-
-### Learning objectives
-
-- Explain cell run order and shared Python state
-- Explain that languages keep separate state
-- Use magics (`%md`, `%sql`, `%fs`, `%sh`) and `%fs` vs `dbutils.fs`
-
-### Lesson flow
-
-Cell run order and shared Python state; languages keep separate state; magics
-(`%md`, `%sql`, `%fs`, `%sh`); `%fs` vs `dbutils.fs`.
-
-### Expected state
-
-Not applicable — no persistent data state.
-
-### Exercise
-
-List filesystem entries with `dbutils.fs`, filter names, and print the
-matches — a short hands-on on the attached compute.
-
-### Next
-
-`04 - Your First DataFrame`
-
-## Notebook 04 — Your First DataFrame
+## Notebook 03 — Your First DataFrame
 
 ### Context
 
@@ -146,11 +111,6 @@ production.
 
 Not applicable — no persistent data state. Ad-hoc in-notebook rows only; see
 Dataset.
-
-### Exercise
-
-Add rideshare-style rows and inspect with `show`, `display`, and
-`printSchema`.
 
 ### Next
 

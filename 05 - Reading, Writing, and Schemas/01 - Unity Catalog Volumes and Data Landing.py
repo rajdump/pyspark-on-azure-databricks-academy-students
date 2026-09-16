@@ -281,29 +281,6 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Confirm the landing volume looks right before you move on:
-# MAGIC
-# MAGIC 1. List `/Volumes/rideshare_dev/landing/source_files/` and check that you
-# MAGIC    see five dataset folders (`trip`, `trip_time`, `zone_lookup`,
-# MAGIC    `payment`, `drivers`).
-# MAGIC 2. List inside `trip/` and confirm `trip.csv` and `bad_trip_data.csv`
-# MAGIC    are present.
-# MAGIC 3. Print how many items are in the `payment/` folder (expect **2** files:
-# MAGIC    `payment.avro` and `bad_payment_data.csv`).
-# MAGIC
-# MAGIC Use `dbutils.fs.ls` (same pattern as the verification cells above).
-
-# COMMAND ----------
-
-# Your code here
-
-
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ---
 # MAGIC ### Setup complete
 # MAGIC

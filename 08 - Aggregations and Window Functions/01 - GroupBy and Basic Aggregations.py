@@ -53,7 +53,6 @@
 # MAGIC | 2. `groupBy().agg()` | Syntax and aliasing | Name aggregate columns explicitly |
 # MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
 # MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |  # noqa: E501
-# MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
 # COMMAND ----------
 
 # DBTITLE 1,Setup
@@ -401,54 +400,6 @@ trip_enriched.select(
     F.count(tip_or_zero).alias("now_counts_all_106"),
     F.avg(tip_or_zero).alias("avg_with_zeros"),
 ).show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise
-# MAGIC %md
-# MAGIC ## Exercise — a per-`payment_method` summary
-# MAGIC
-# MAGIC Sections 1–4 grouped mostly on `service_type`. Apply the same habits on
-# MAGIC **`payment_method`**.
-# MAGIC
-# MAGIC **1. Aggregate.** One row per `payment_method`, with these aliased columns:
-# MAGIC
-# MAGIC | Alias | Aggregate |
-# MAGIC |---|---|
-# MAGIC | `trip_count` | All trips (`count("*")`) |
-# MAGIC | `trips_with_fare` | Trips with a non-NULL `base_fare_amount` |
-# MAGIC | `total_base_fare` | Sum of `base_fare_amount`, rounded to 2 |
-# MAGIC | `avg_fare_skips_null` | `F.avg("base_fare_amount")`, rounded to 2 |
-# MAGIC | `avg_fare_per_trip` | `F.sum / F.count("*")`, rounded to 2 |
-# MAGIC
-# MAGIC **2. Check the row count.** After you run, set `predicted_method_groups` to
-# MAGIC the number of rows you got and confirm it matches `method_summary.count()`.
-# MAGIC (You may see more groups than `countDistinct("payment_method")` — Notebook
-# MAGIC `02` explains why.)
-# MAGIC
-# MAGIC **3. Explain (Section 4).** For the row where `payment_method` is NULL, why
-# MAGIC are `total_base_fare` and `avg_fare_skips_null` both NULL, while
-# MAGIC `trip_count` is 1?
-# MAGIC
-# MAGIC **Self-check:** `trip_count` should sum to **106**; `trips_with_fare`
-# MAGIC should sum to **104** (matches the NULL map at the top of this notebook).
-
-# COMMAND ----------
-
-# 1. YOUR CODE — build the per-payment_method summary described above
-method_summary = trip_enriched.groupBy("payment_method").agg(
-    F.count("*").alias("trip_count"),
-    # TODO: trips_with_fare, total_base_fare, avg_fare_skips_null, avg_fare_per_trip
-)
-
-# 2. YOUR CHECK — set this to the row count you observed
-predicted_method_groups = None
-
-actual = method_summary.count()
-match = "✓" if predicted_method_groups == actual else "✗"
-print(f"{match} predicted={predicted_method_groups}, actual={actual}")
-
-method_summary.orderBy(F.col("trip_count").desc()).show()
 
 # COMMAND ----------
 

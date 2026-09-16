@@ -305,28 +305,6 @@ wide_df.explain()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build an isolated example (do not reuse DataFrames from earlier sections):
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** (`bigint`),
-# MAGIC    **`payment_method`** (`string`), **`base_fare_amount`**
-# MAGIC    (`decimal(10,2)`), and **`tip_amount`** (`decimal(10,2)`). Use four to
-# MAGIC    six small rows with mixed `card` / `cash` and at least one zero tip.
-# MAGIC 2. Build a **narrow** DataFrame with `filter` on tip amount. Predict: no
-# MAGIC    `Exchange`. Verify with `explain()`, then `collect()`.
-# MAGIC 3. Build a **wide** DataFrame with `groupBy("payment_method").count()`.
-# MAGIC    Predict: `Exchange` present. Verify with `explain()`, then `collect()`.
-# MAGIC 4. Add a one-line note comparing the stage story you expect in Spark UI for
-# MAGIC    each action (`1/1` vs more than one stage).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's path:

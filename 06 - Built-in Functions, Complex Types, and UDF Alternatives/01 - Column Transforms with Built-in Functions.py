@@ -438,36 +438,6 @@ payment_amounts.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build **`trip_exercise`** from `trip` with these columns:
-# MAGIC
-# MAGIC 1. Keep `trip_id` and `service_type`.
-# MAGIC 2. Create **`service_type_clean`** with `F.trim` and `F.upper`.
-# MAGIC 3. Create **`duration_gap_mins`** as the absolute difference between
-# MAGIC    `ride_duration_mins` and `request_to_pickup_mins`.
-# MAGIC 4. Create **`distance_band`** with `F.when`:
-# MAGIC    - Less than 3 miles → `short_distance`
-# MAGIC    - Less than 8 miles → `medium_distance`
-# MAGIC    - Otherwise → `long_distance`
-# MAGIC 5. Display 10 rows. Do not write the result.
-# MAGIC
-# MAGIC Each required pattern was demonstrated above, but the columns and boundary
-# MAGIC values are different.
-
-# COMMAND ----------
-
-trip_exercise = trip.select(
-    F.col("trip_id"),
-    F.col("service_type"),
-    # Add service_type_clean, duration_gap_mins, and distance_band here.
-)
-
-trip_exercise.show(10, truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **Built-in functions** create Spark Column expressions that Spark can

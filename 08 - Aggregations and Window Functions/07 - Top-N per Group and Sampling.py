@@ -31,7 +31,6 @@
 # MAGIC | 2 | Ties at the cutoff | Choose `row_number` vs `rank`; add a secondary sort when needed |
 # MAGIC | 3 | NULL sort placement | Control where NULLs appear in window `orderBy` |
 # MAGIC | 4 | Sampling | Draw reproducible subsets with a seed |
-# MAGIC | Exercise | Top tips per borough | Combine Top-N with explicit tip NULL placement |
 # MAGIC
 # MAGIC Run this module **01–06**, especially
 # MAGIC **`05 - Window Functions Fundamentals`** and
@@ -48,7 +47,7 @@
 # MAGIC | DataFrame | Rows | Used for |
 # MAGIC |---|---:|---|
 # MAGIC | `trip_driver_assignment` | 100 | Sections 1–2 (Top-N); Section 4c |
-# MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort); Section 4a–4b; exercise |
+# MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort); Section 4a–4b |
 # MAGIC
 # MAGIC Notebook **05** introduced Top-2 per driver. Here we extend the same pattern
 # MAGIC to Top-3 and verify how filtering changes the output grain.
@@ -647,67 +646,6 @@ subset_b.select(
     "trip_id",
     "trip_distance_miles",
 ).show(5, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise — Top tips per borough with explicit NULL placement
-# MAGIC %md
-# MAGIC ## Exercise — Top tips per borough with explicit NULL placement
-# MAGIC
-# MAGIC Which 2 trips per `pickup_borough` had the highest known tips?
-# MAGIC
-# MAGIC Repeat the Top-N pattern on `trip_enriched`, partitioned by
-# MAGIC `pickup_borough`.
-# MAGIC
-# MAGIC Trips **103** and **106** have NULL `tip_amount`. Order tips with
-# MAGIC `desc_nulls_last()` so known tip values are ranked before NULLs.
-# MAGIC For descending order, NULLs last is already Spark's default. Use
-# MAGIC `desc_nulls_last()` explicitly here so the intended NULL placement is
-# MAGIC visible in the code.
-# MAGIC
-# MAGIC | Column | Pattern |
-# MAGIC |---|---|
-# MAGIC | `tip_row_number` | `row_number` within `pickup_borough`, tip descending, NULLs last |
-# MAGIC | filter | keep `tip_row_number <= 2` |
-# MAGIC
-# MAGIC Predict the output row count, then build, verify, and inspect.
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise — Build, verify, and inspect
-predicted_top_tip_rows = None  # TODO: replace with your prediction
-
-# TODO: Window.partitionBy("pickup_borough").orderBy(
-#     F.col("tip_amount").desc_nulls_last(),
-# )
-tip_rank_window = None
-
-trip_tip_ranked = trip_enriched.withColumn(
-    "tip_row_number",
-    F.row_number().over(tip_rank_window),
-)
-
-top2_tips_per_borough = trip_tip_ranked.filter(
-    F.col("tip_row_number") <= 2,
-)
-
-actual_top_tip_rows = top2_tips_per_borough.count()
-top_tip_match = "✓" if predicted_top_tip_rows == actual_top_tip_rows else "✗"
-print(
-    f"{top_tip_match} top-2 tip rows:",
-    f"predicted={predicted_top_tip_rows},",
-    f"actual={actual_top_tip_rows}",
-)
-
-top2_tips_per_borough.select(
-    "pickup_borough",
-    "trip_id",
-    "tip_amount",
-    "tip_row_number",  # derived column
-).orderBy(
-    "pickup_borough",
-    "tip_row_number",
-).show(truncate=False)
 
 # COMMAND ----------
 

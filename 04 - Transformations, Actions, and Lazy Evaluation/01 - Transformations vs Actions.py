@@ -287,32 +287,6 @@ top_premium.show(truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a similar isolated chain with columns from the course **`payment`**
-# MAGIC schema:
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** (`bigint`),
-# MAGIC    **`payment_method`** (`string`), **`base_fare_amount`**
-# MAGIC    (`decimal(10,2)`), and **`tip_amount`** (`decimal(10,2)`). Use three or
-# MAGIC    four small rows.
-# MAGIC 2. Filter to rows where **`payment_method`** is **`"card"`**.
-# MAGIC 3. Add **`fare_and_tip_amount`** as **`base_fare_amount + tip_amount`**.
-# MAGIC 4. Select **`trip_id`**, **`payment_method`**, and
-# MAGIC    **`fare_and_tip_amount`**.
-# MAGIC 5. Before you run anything, label each of steps 2–4 as a transformation or
-# MAGIC    an action.
-# MAGIC 6. Call **`show()`** once after the chain is complete.
-# MAGIC
-# MAGIC Do not reuse DataFrames from earlier sections.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's path:

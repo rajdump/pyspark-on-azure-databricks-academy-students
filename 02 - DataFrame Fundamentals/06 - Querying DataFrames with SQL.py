@@ -237,24 +237,6 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named `my_df` and complete:
-# MAGIC
-# MAGIC 1. Create `my_df` with explicit `trip`-aligned column names and types.
-# MAGIC 2. Register it as a session temporary view with a SQL name you choose.
-# MAGIC 3. Query the view with **`%sql`** or **`spark.sql(...)`**.
-# MAGIC 4. Show the result.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (a handful of rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's SQL query path:

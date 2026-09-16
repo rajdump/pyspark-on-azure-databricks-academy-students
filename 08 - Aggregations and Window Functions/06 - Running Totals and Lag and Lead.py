@@ -85,7 +85,6 @@
 # MAGIC | 2 | What were each borough's first and final ordered fares? | `first_value` / `last_value`; current-row vs full frame |  # noqa: E501
 # MAGIC | 3 | How much has accumulated through each date? | Running totals on a 14-row daily series |  # noqa: E501
 # MAGIC | 4 | Did today beat yesterday? | `lag` / `lead` |
-# MAGIC | Exercise | Which service type's tips are growing? | Running tip totals and previous-row change |  # noqa: E501
 # COMMAND ----------
 
 # DBTITLE 1,Setup
@@ -112,7 +111,7 @@
 # MAGIC | DataFrame       | Rows | Used for                      |
 # MAGIC | --------------- | ---: | ----------------------------- |
 # MAGIC | `trip_enriched` |  106 | Source table                  |
-# MAGIC | `dated_trip`    |  100 | Sections 1–4 and the exercise |
+# MAGIC | `dated_trip`    |  100 | Sections 1–4 |
 # MAGIC
 # MAGIC Filtering these six rows also removes the inherited NULLs relevant to this
 # MAGIC notebook. In `dated_trip`, the columns used here — `base_fare_amount`,
@@ -613,155 +612,6 @@ daily_with_comparisons.select(
 # MAGIC The offset is measured in **rows**, not calendar days. If `2026-03-08`
 # MAGIC were missing, the `lag` value for `2026-03-09` would come from
 # MAGIC `2026-03-07`, not from an automatically created March 8 row.
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise
-# MAGIC %md
-# MAGIC ## Exercise — Track daily tip trends by service type
-# MAGIC
-# MAGIC Finance wants tip trends **per service type**, not across the whole fleet.
-# MAGIC
-# MAGIC Work in three steps:
-# MAGIC
-# MAGIC 1. Collapse `dated_trip` to one row per (`service_type`, `trip_date`) with
-# MAGIC    `daily_tip_amount`.
-# MAGIC 2. Add `running_tip_amount` (Section 3 frame, partitioned by `service_type`).
-# MAGIC 3. Add `previous_row_tip_amount` and `tip_change_vs_previous_row` (Section 4
-# MAGIC    `lag`).
-# MAGIC
-# MAGIC | Column | Reuse from |
-# MAGIC |---|---|
-# MAGIC | `running_tip_amount` | Section 3 — `rowsBetween(unboundedPreceding, currentRow)` |
-# MAGIC | `previous_row_tip_amount` | Section 4 — `lag(..., 1)` |
-# MAGIC | `tip_change_vs_previous_row` | Section 4 — current minus lagged |
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 1 - Service-date grain
-# MAGIC %md
-# MAGIC ### Step 1 — One row per (`service_type`, `trip_date`)
-# MAGIC
-# MAGIC 1. Predict how many **distinct `service_type` values** appear in
-# MAGIC    `dated_trip` (`UNKNOWN` sits on undated trips only).
-# MAGIC 2. Predict how many rows the grouped result has.
-# MAGIC 3. Build `service_daily_tip` with `daily_tip_amount` = rounded sum of
-# MAGIC    `tip_amount`.
-# MAGIC 4. Compare predictions to the actual distinct service types and row count.
-
-# COMMAND ----------
-
-# DBTITLE 1,Build and verify service-date grain
-predicted_service_type_count = None  # TODO: replace with your prediction
-predicted_service_date_rows = None  # TODO: replace with your prediction
-
-service_daily_tip = dated_trip.groupBy(
-    "service_type",
-    "trip_date",
-).agg(
-    F.round(
-        F.sum(F.col("tip_amount")),
-        2,
-    ).alias("daily_tip_amount"),
-)
-
-actual_service_type_count = (
-    service_daily_tip.select(
-        "service_type",
-    )
-    .distinct()
-    .count()
-)
-actual_service_date_rows = service_daily_tip.count()
-
-service_type_match = "✓" if predicted_service_type_count == actual_service_type_count else "✗"
-service_date_match = "✓" if predicted_service_date_rows == actual_service_date_rows else "✗"
-print(
-    f"{service_type_match} service types:",
-    f"predicted={predicted_service_type_count},",
-    f"actual={actual_service_type_count}",
-)
-print(
-    f"{service_date_match} service-date rows:",
-    f"predicted={predicted_service_date_rows},",
-    f"actual={actual_service_date_rows}",
-)
-
-service_daily_tip.orderBy("service_type", "trip_date").show(20, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 2 - Running tip total
-# MAGIC %md
-# MAGIC ### Step 2 — Running tip total within each service type
-# MAGIC
-# MAGIC Partition by `service_type`, order by `trip_date`, and use the same
-# MAGIC cumulative **ROWS** frame as Section 3.
-# MAGIC
-# MAGIC Each service type's running total should **restart** on its first date.
-
-# COMMAND ----------
-
-# DBTITLE 1,Add running tip amount
-# TODO: Window.partitionBy("service_type").orderBy("trip_date").rowsBetween(
-# Window.unboundedPreceding, Window.currentRow)
-service_running_window = None
-
-service_with_running_tip = service_daily_tip.withColumn(
-    "running_tip_amount",
-    F.round(
-        F.sum(F.col("daily_tip_amount")).over(service_running_window),
-        2,
-    ),
-)
-
-service_with_running_tip.filter(
-    F.col("service_type") == "XL",
-).orderBy("trip_date").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 3 - Lag and row-over-row change
-# MAGIC %md
-# MAGIC ### Step 3 — Change vs the previous row in that series
-# MAGIC
-# MAGIC Use the same partition and order **without** `rowsBetween`.
-# MAGIC
-# MAGIC `lag` reads the previous **row** in the ordered partition, not yesterday on
-# MAGIC the calendar. `XL` appears on only 8 of the 14 dates.
-
-# COMMAND ----------
-
-# DBTITLE 1,Add lag and tip change
-# TODO: Window.partitionBy("service_type").orderBy("trip_date")
-service_order_window = None
-
-service_tip_trend = service_with_running_tip.withColumn(
-    "previous_row_tip_amount",
-    F.lag(F.col("daily_tip_amount"), 1).over(service_order_window),
-).withColumn(
-    "tip_change_vs_previous_row",
-    F.round(
-        F.col("daily_tip_amount") - F.col("previous_row_tip_amount"),
-        2,
-    ),
-)
-
-service_tip_trend.filter(
-    F.col("service_type") == "XL",
-).orderBy("trip_date").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise interpretation
-# MAGIC %md
-# MAGIC - The running tip amount restarts for each service type.
-# MAGIC - The first row in each service type has no previous row, so its lag and
-# MAGIC   change values are NULL.
-# MAGIC - `XL` has rows on 8 of the 14 dates. Where dates are skipped, `lag` reads
-# MAGIC   the previous available XL row rather than necessarily yesterday.
-# MAGIC
-# MAGIC The grouped input contains **4 service types** and **44 service-date rows**.
 
 # COMMAND ----------
 

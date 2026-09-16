@@ -68,18 +68,6 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC `MERGE` **1001** **3.00 → 4.00**. Still **4** rows; 1003 stays **10.00**.
-
-# COMMAND ----------
-
-# TODO: MERGE 1001 tip 3.00 → 4.00
-# TODO: SELECT — 4 rows; 1001 tip is 4.00; 1003 stays 10.00
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC TODO: recap MERGE matched update and not-matched insert.

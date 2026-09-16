@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 04 - Your First DataFrame
+# MAGIC # 03 - Your First DataFrame
 # MAGIC
 # MAGIC First DataFrame from in-notebook Python rows — not file reads from
 # MAGIC `data/raw/`.
@@ -10,6 +10,23 @@
 # MAGIC - Build a small rideshare DataFrame from Python rows (no explicit schema)
 # MAGIC - Inspect with `show` / `display` / `printSchema`
 # MAGIC - Explain why an inferred schema is fine for demos, not for production
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Setup
+# MAGIC
+# MAGIC Before you run any code cells:
+# MAGIC
+# MAGIC 1. Open this notebook in your Azure Databricks workspace (via the Git folder
+# MAGIC    that tracks this course repository).
+# MAGIC 2. In the notebook toolbar, open the **Connect** (compute) dropdown.
+# MAGIC 3. Select classic **all-purpose** compute, or start it if it is stopped.
+# MAGIC 4. Wait until the notebook shows that it is attached (connected).
+# MAGIC
+# MAGIC If a cell fails with a message about no cluster or compute, attach compute
+# MAGIC and try again. You do not need any data files for this notebook.
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -83,23 +100,6 @@ display(trips_df)
 # COMMAND ----------
 
 trips_df.printSchema()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Create a second small DataFrame named `my_trips_df` the same simple way
-# MAGIC (rows + column names — no schema object):
-# MAGIC
-# MAGIC 1. Add at least 3 rows of your own rideshare-style values.
-# MAGIC 2. Run `my_trips_df.show(truncate=False)`.
-# MAGIC 3. Run `display(my_trips_df)`.
-# MAGIC 4. Run `my_trips_df.printSchema()` and note that the types are inferred.
-
-# COMMAND ----------
-
-# Your code here.
 
 # COMMAND ----------
 

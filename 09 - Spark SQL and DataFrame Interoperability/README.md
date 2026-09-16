@@ -77,18 +77,14 @@ No `GROUP BY`.
 UC `%sql` + `spark.table`; `spark.sql`→DF; row-level `CASE` →
 `tip_amount_band` (≠ Module 6 percent `tip_band`); DF→temp view;
 when-to-choose table. **No `GROUP BY`.** Locked bands: zero 26 / low 40 /
-medium 20 / high 18 / no_data 2. Exercise → **43** Manhattan known-tip rows.
+medium 20 / high 18 / no_data 2.
 
 ### Expected state
 
 - Input: `trip_enriched`
 - Output: none to managed tables
 - Expected rows: locked bands zero 26 / low 40 / medium 20 / high 18 /
-  no_data 2; exercise → **43** Manhattan known-tip rows
-
-### Exercise
-
-**43** Manhattan known-tip rows.
+  no_data 2
 
 ### Next
 
@@ -111,17 +107,13 @@ reference.
 Layered arc: projection → service `tier` CASE → `COALESCE` → JOIN
 (deliberate `AMBIGUOUS_REFERENCE` then fix) → first `GROUP BY` → `HAVING`.
 Side path: `NOT EXISTS` undriven (**6**). After JOIN: high 15 / standard 64 /
-other 21. Exercise: compound `HAVING` + undriven ids.
+other 21.
 
 ### Expected state
 
 - Input: `trip_enriched`, `trip_driver_assignment`
 - Output: none to managed tables
 - Expected rows: undriven **6**; after JOIN high 15 / standard 64 / other 21
-
-### Exercise
-
-Compound `HAVING` + undriven ids.
 
 ### Next
 
@@ -142,17 +134,13 @@ SQL `PIVOT` / `UNPIVOT` and a brief `TABLESAMPLE` contrast.
 
 Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros
 + SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic
-`TABLESAMPLE`. Exercise: `payment_method` reshape by borough.
+`TABLESAMPLE`.
 
 ### Expected state
 
 - Input: `trip_enriched`
 - Output: session temp view only (not a managed-table write)
 - Expected rows: borough×service counts **18**
-
-### Exercise
-
-`payment_method` reshape by borough.
 
 ### Next
 
@@ -172,18 +160,13 @@ Window `OVER` + `QUALIFY`, and running totals / `LAG` on daily KPI grain.
 ### Lesson flow
 
 Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery
-equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise:
-Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows.
+equivalent. Part 2: running distance + `LAG` + direction `CASE`.
 
 ### Expected state
 
 - Input: `kpi_zone_performance`, `kpi_daily_trip_summary`
 - Output: none to managed tables
-- Expected rows: Top-2 by tip **9**; exercise Top-2 by `trip_count` → **8**
-
-### Exercise
-
-Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows.
+- Expected rows: Top-2 by tip **9**
 
 ### Next
 
@@ -203,17 +186,12 @@ CTEs and safe named `:params` — not f-string SQL.
 ### Lesson flow
 
 Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough`
-params (anti f-string) → CTE + params. Exercise: borough daily tip as share
-of fleet daily.
+params (anti f-string) → CTE + params.
 
 ### Expected state
 
 - Input: `trip_enriched`
 - Output: none to managed tables
-
-### Exercise
-
-Borough daily tip as share of fleet daily.
 
 ### Next
 
@@ -231,17 +209,13 @@ Phase II synthesis: rebuild Module 8 KPI contracts in Spark SQL. Read-only.
 
 ### Lesson flow
 
-Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No
-exercise. Phase II synthesis; next is Module 10 (Phase III).
+Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes.
+Phase II synthesis; next is Module 10 (Phase III).
 
 ### Expected state
 
 - Input: `trip_enriched`, `trip_driver_assignment`
 - Output: none — no writes. KPI contracts: Module 8 Shared paths and assets.
-
-### Exercise
-
-An exercise does not apply — the three KPI rebuilds are the synthesis.
 
 ### Next
 

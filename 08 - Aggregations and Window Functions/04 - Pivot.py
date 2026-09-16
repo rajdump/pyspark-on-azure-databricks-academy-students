@@ -32,7 +32,6 @@
 # MAGIC | 1 | Long `groupBy` | Calculate the result without changing its shape |
 # MAGIC | 2 | `pivot` + explicit values | Turn known category values into report columns |
 # MAGIC | 3 | When not to pivot | Avoid creating too many columns from high-cardinality data |
-# MAGIC | Exercise | Pivot `payment_method` | Apply the same pattern to another small category set |
 # COMMAND ----------
 
 # DBTITLE 1,Setup
@@ -142,45 +141,6 @@ trips_by_borough_wide.orderBy("pickup_borough").show()
 
 print("service_type distinct:", trip_enriched.select("service_type").distinct().count())
 print("trip_id distinct:", trip_enriched.select("trip_id").distinct().count())
-
-# COMMAND ----------
-
-# DBTITLE 1,How do payment methods look as columns by pickup borough?
-# MAGIC %md
-# MAGIC ## Exercise — How do payment methods look as columns by pickup borough?
-# MAGIC
-# MAGIC Apply the same pivot pattern from Section 2.
-# MAGIC
-# MAGIC Build one row per `pickup_borough`, turn payment methods into columns, and use
-# MAGIC `count(trip_id)` for the cell values.
-# MAGIC
-# MAGIC Use these explicit pivot values:
-# MAGIC
-# MAGIC `card`, `wallet`, `cash`, `corporate`, `unknown`
-# MAGIC
-# MAGIC Notebook 02 showed that one source row has a NULL `payment_method`. Because the
-# MAGIC pivot uses an explicit values list, that NULL does not become its own payment
-# MAGIC column.
-# MAGIC
-# MAGIC Predict the number of borough rows, complete the TODOs, then verify the result.
-
-# COMMAND ----------
-
-predicted_borough_groups = None  # TODO: replace with your prediction
-
-payment_methods = None  # TODO: ["card", "wallet", "cash", "corporate", "unknown"]
-
-borough_payment_wide = (
-    trip_enriched.groupBy("pickup_borough")
-    .pivot("payment_method", payment_methods)
-    .agg(F.count("trip_id"))
-)
-
-actual = borough_payment_wide.count()
-match = "✓" if predicted_borough_groups == actual else "✗"
-print(f"{match} predicted={predicted_borough_groups}, actual={actual}")
-
-borough_payment_wide.orderBy("pickup_borough").show()
 
 # COMMAND ----------
 

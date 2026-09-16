@@ -338,35 +338,6 @@ reward_decisions.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named **`exercise_df`** and
-# MAGIC complete:
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`**, **`service_type`**, and
-# MAGIC    **`dropoff_location_id`** (aligned with the `trip` table). Include at
-# MAGIC    least one **`NULL`** **`service_type`** and one **`NULL`**
-# MAGIC    **`dropoff_location_id`**.
-# MAGIC 2. Define a reusable condition **`is_premium`** where **`service_type`**
-# MAGIC    equals **`"Premium"`**. For missing service types, the intermediate
-# MAGIC    column shows **`NULL`**.
-# MAGIC 3. Build a blocklist **`restricted_zones`** that accidentally includes Python
-# MAGIC    **`None`**, then derive **`safe_restricted`** without **`None`**.
-# MAGIC 4. Define **`zone_ok`** — keep rows whose **`dropoff_location_id`** is
-# MAGIC    **`NULL`** **or** not in **`safe_restricted`** (same pattern as
-# MAGIC    **`location_allowed`** above).
-# MAGIC 5. Filter to rows where **`is_premium & zone_ok`** is **`TRUE`** and show
-# MAGIC    the result.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (four or five rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's NULL predicate path:

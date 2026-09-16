@@ -66,7 +66,7 @@ Notebook **02** adds `driver_payout_amount decimal(10,2)` from
 
 | trip_id | service_type | payment_method | base_fare_amount | tip_amount | Lab use |
 |---|---|---|---:|---:|---|
-| 1001 | STANDARD | card | 20.00 | 3.00 | 03 exercise: `MERGE` tip → **4.00**; 04 OCC |
+| 1001 | STANDARD | card | 20.00 | 3.00 | 04 OCC |
 | 1002 | SHARED | cash | 15.00 | 0.00 | 02–04: present |
 | 1003 | PREMIUM | card | 40.00 | 6.00 | 03 `MERGE` → **10.00**; 04 OCC |
 | 1004 | STANDARD | wallet | 25.00 | 2.50 | 03 `MERGE` insert; 04 OCC |
@@ -121,10 +121,6 @@ Setup for notebook **01**. Open from the course Git folder.
 - Output: `{url}/external-tables/fare_dv_lab` converted to Delta. See
   Dataset.
 
-### Exercise
-
-An exercise does not apply — this is a setup notebook.
-
 ### Boundaries
 
 No DV teaching, `UPDATE`, `VACUUM`, `OPTIMIZE`.
@@ -162,10 +158,6 @@ Compare one `UPDATE` with DV off vs on (`LIST`, `DESCRIBE HISTORY`).
 - Input: **00**'s folder `{url}/external-tables/fare_dv_lab`
 - Output: `rideshare_dev.processed.fare_dv_lab` at that location. DML uses
   `row_id` and `passenger_fare` from the lab file only.
-
-### Exercise
-
-An exercise does not apply.
 
 ### Boundaries
 
@@ -206,10 +198,6 @@ expected fail.
 - Expected failure: append with extra column before `ALTER`; insert that
   violates `CHECK`
 
-### Exercise
-
-An exercise does not apply.
-
 ### Boundaries
 
 No column mapping, `DROP COLUMN`, identity/generated columns, `MERGE`, DV,
@@ -241,10 +229,6 @@ MATCHED` insert. **2** `SELECT` **4** rows; 1003 is **10.00**; 1004 present.
 - Output: `rideshare_dev.processed.fare_maint_lab`
 - Expected rows: after setup **3**; after `MERGE` **4** (1003 tip **10.00**;
   1004 present)
-
-### Exercise
-
-`MERGE` **1001** **3.00 → 4.00**; still **4** rows; 1003 stays **10.00**.
 
 ### Boundaries
 
@@ -282,10 +266,6 @@ non-overlapping rows — no lab.
 - Expected rows: **4** remain after the OCC demo
 - Expected failure: concurrent-modification error on the overlapping write,
   then retry
-
-### Exercise
-
-An exercise does not apply.
 
 ### Boundaries
 

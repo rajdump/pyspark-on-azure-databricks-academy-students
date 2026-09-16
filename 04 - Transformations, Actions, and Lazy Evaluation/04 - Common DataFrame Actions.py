@@ -199,29 +199,6 @@ pdf  # noqa: B018 -- bare expression triggers Databricks' rich cell display
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build an isolated example (do not reuse DataFrames from earlier sections):
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** (`bigint`),
-# MAGIC    **`payment_method`** (`string`), **`base_fare_amount`**
-# MAGIC    (`decimal(10,2)`), and **`tip_amount`** (`decimal(10,2)`). Use four to
-# MAGIC    six small rows with mixed tip amounts.
-# MAGIC 2. Sort by **`tip_amount`** descending into **`exercise_ordered`**.
-# MAGIC 3. Call **`first()`**, **`take(2)`**, and **`tail(2)`**. Print the return
-# MAGIC    type of each.
-# MAGIC 4. Call **`isEmpty()`** on **`exercise_ordered`**, then on a filter that
-# MAGIC    matches no rows.
-# MAGIC 5. Call **`toPandas()`** once on this small result. Add a one-line note
-# MAGIC    about why you would not call it on a large production DataFrame.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's path:

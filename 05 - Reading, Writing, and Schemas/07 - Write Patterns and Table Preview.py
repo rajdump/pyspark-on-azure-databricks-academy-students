@@ -362,29 +362,6 @@ spark.table(managed_table).show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Write a second extract. Do not reuse the worked-output paths above
-# MAGIC (**`write_modes_demo/`**, **`trip_time_partitioned/`**,
-# MAGIC **`trip_time_delta_file/`**, or **`trip_time_preview`**).
-# MAGIC
-# MAGIC 1. From **`write_source`** (or a fresh read of **`trip_time.parquet`**),
-# MAGIC    **`select`** **`trip_id`** and **`trip_date`** only.
-# MAGIC 2. Write that extract as Parquet to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/trip_date_exercise/`**
-# MAGIC    with **`.mode("overwrite")`** and **`.partitionBy("trip_date")`**.
-# MAGIC 3. List the partition folders with **`dbutils.fs.ls`**.
-# MAGIC 4. Write the same two-column extract as a managed Delta table named
-# MAGIC    **`rideshare_dev.processed.trip_date_preview`** (drop it first if it
-# MAGIC    exists), then **`show(3)`** via **`spark.table(...)`**.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **Save modes** — **`overwrite`**, **`append`**, **`ignore`**, and

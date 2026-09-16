@@ -99,17 +99,12 @@ Grain, cardinality, and join syntax — skill-building only (no write).
 
 Grain; 1:1 / 1:M / M:M; string join `trip`↔`trip_time` → 100; list join
 `trip_charges`↔`rate_card` (`trip_id` alone → 12 wrong; `["trip_id",
-"charge_type"]` → 4); Boolean rename + duplicate-column trap; unmatched-keys
-exercise (expect 3 / 5 / 5 / 7).
+"charge_type"]` → 4); Boolean rename + duplicate-column trap.
 
 ### Expected state
 
 - Input: landing `trip`, `trip_time` (+ constructed frames). No `payment`.
 - Output: none (no write)
-
-### Exercise
-
-Unmatched-keys exercise (expect 3 / 5 / 5 / 7).
 
 ### Next
 
@@ -136,10 +131,6 @@ M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys +
 
 - Input: landing `trip`, `trip_time`, `payment` (+ frames)
 - Output: none (no write)
-
-### Exercise
-
-Short hands-on on the demonstrated join-validation pattern.
 
 ### Next
 
@@ -170,10 +161,6 @@ repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**;
   `/Volumes/rideshare_dev/processed/output_files/curated/trip/` (106)
 - Output: none (no write)
 
-### Exercise
-
-Unmatched 21–22 practice.
-
 ### Next
 
 `04 - Semi Joins and Anti Joins`
@@ -198,10 +185,6 @@ Unmatched 21–22 practice.
 
 - Input: curated `trip/` (106), curated `payment/` (105)
 - Output: none (no write)
-
-### Exercise
-
-Short hands-on on semi/anti.
 
 ### Next
 
@@ -228,10 +211,6 @@ Stack frames with `union` / `unionByName` — constructed frames only.
 - Input: constructed frames (no landing read)
 - Output: none (no write)
 
-### Exercise
-
-Short hands-on on union alignment.
-
 ### Next
 
 `06 - Intersect, subtract, and exceptAll`
@@ -256,10 +235,6 @@ SQL `EXCEPT` naming.
 
 - Input: constructed frames (no landing read)
 - Output: none (no write)
-
-### Exercise
-
-Short hands-on on set ops.
 
 ### Next
 
@@ -289,10 +264,6 @@ profiling, validation, or practice.
   `zone_lookup`
 - Output: `rideshare_dev.processed.trip_enriched` (106 rows, 16 columns) and
   `rideshare_dev.processed.trip_driver_assignment` (13 columns). See Dataset.
-
-### Exercise
-
-An exercise does not apply — this notebook is write-only (no practice).
 
 ### Next
 

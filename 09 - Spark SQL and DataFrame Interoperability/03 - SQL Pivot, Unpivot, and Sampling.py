@@ -22,7 +22,6 @@
 # MAGIC - `pickup_borough` — the row grouping
 # MAGIC - `service_type` — the values we'll pivot into columns
 # MAGIC - `trip_id` — used to count trips
-# MAGIC - `payment_method` — used later in the exercise
 # MAGIC
 # MAGIC The table contains **106 trips**.
 # MAGIC
@@ -210,52 +209,6 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %sql
 # MAGIC SELECT *
 # MAGIC FROM rideshare_dev.processed.trip_enriched TABLESAMPLE (25 PERCENT)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Repeat the same reshape using `payment_method`.
-# MAGIC
-# MAGIC ### Q1 — Pivot payment methods to columns
-# MAGIC
-# MAGIC One row per `pickup_borough`. Pivot these values into columns:
-# MAGIC
-# MAGIC - `card`, `cash`, `wallet`, `corporate`, `unknown`
-# MAGIC
-# MAGIC Count with `trip_id`.
-# MAGIC
-# MAGIC **Expected:** **5 borough rows × 5 payment-method columns**.
-# MAGIC
-# MAGIC ### Q2 — Replace NULLs and unpivot
-# MAGIC
-# MAGIC `COALESCE` NULL cells to `0`, then `UNPIVOT` back to
-# MAGIC `pickup_borough` + `payment_method` rows (zeros included).
-# MAGIC
-# MAGIC Trip 106 has a NULL `payment_method`. NULL is not in the explicit
-# MAGIC `PIVOT ... IN (...)` list, so it does not become its own column.
-# MAGIC
-# MAGIC **Expected:** explicit zero rows included after unpivot.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Q1: PIVOT payment_method by pickup_borough (expect 5 borough rows × 5 methods)
-# MAGIC -- TODO: wrap a subquery in PIVOT (COUNT(trip_id) FOR payment_method IN (...))
-# MAGIC SELECT pickup_borough
-# MAGIC FROM rideshare_dev.processed.trip_enriched
-# MAGIC WHERE 1 = 0
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Q2: COALESCE zeros, then UNPIVOT (expect explicit 0 rows)
-# MAGIC -- Hint: UNPIVOT a subquery that applies COALESCE, or create a temp view
-# MAGIC -- then UNPIVOT in the next cell (not both in one %sql cell)
-# MAGIC SELECT pickup_borough
-# MAGIC FROM rideshare_dev.processed.trip_enriched
-# MAGIC WHERE 1 = 0
 
 # COMMAND ----------
 

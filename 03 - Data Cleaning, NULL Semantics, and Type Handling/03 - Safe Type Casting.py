@@ -253,29 +253,6 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named **`exercise_df`** and
-# MAGIC complete:
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`** and **`trip_distance_miles`**
-# MAGIC    as **`string`** (aligned with the `trip` table). Include at least one
-# MAGIC    valid decimal string and one invalid value such as **`"unknown"`**.
-# MAGIC 2. Add **`trip_distance_miles_clean`** using **`try_cast`** to
-# MAGIC    **`decimal(8,2)`**.
-# MAGIC 3. Filter to rows where the source was not **`NULL`** but the cast result
-# MAGIC    is **`NULL`** — the rejected-row pattern.
-# MAGIC 4. Show the rejected rows.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (four or five rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's casting path:

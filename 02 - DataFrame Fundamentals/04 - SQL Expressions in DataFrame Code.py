@@ -323,25 +323,6 @@ operations_summary.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named `my_df` and complete:
-# MAGIC
-# MAGIC 1. Create `my_df` with explicit `trip`-aligned column names and types.
-# MAGIC 2. Store one SQL expression string in a variable (for example average
-# MAGIC    speed or a `CASE WHEN` distance band).
-# MAGIC 3. Add a derived column with `F.expr` or `selectExpr` using that string.
-# MAGIC 4. Show the result with the derived column visible.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (a handful of rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's SQL-in-DataFrame path:

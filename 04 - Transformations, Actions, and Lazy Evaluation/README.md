@@ -57,10 +57,6 @@ Transformations vs actions; chain before one action — example 1 (`filter`,
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Explain a chain on a slightly different DataFrame.
-
 ### Next
 
 `02 - Lazy Evaluation and the Query Plan`
@@ -85,10 +81,6 @@ push a late filter earlier on one narrow chain.
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Inspect an optimized plan.
 
 ### Next
 
@@ -118,10 +110,6 @@ Module 17).
 
 Not applicable — no persistent data state.
 
-### Exercise
-
-Predict shuffle on a slightly different chain.
-
 ### Next
 
 `04 - Common DataFrame Actions`
@@ -147,10 +135,6 @@ known); sort then compare `first()` / `head()` / `head(n)` / `take(n)`;
 ### Expected state
 
 Not applicable — no persistent data state.
-
-### Exercise
-
-Practice pull/check actions.
 
 ### Next
 

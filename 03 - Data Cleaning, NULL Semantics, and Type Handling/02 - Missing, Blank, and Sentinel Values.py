@@ -363,29 +363,6 @@ print("original df row count: ", df.count())
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named **`exercise_df`** and
-# MAGIC complete:
-# MAGIC
-# MAGIC 1. Create **`exercise_df`** with **`trip_id`**, **`service_type`**, and
-# MAGIC    **`ride_duration_mins`** (`trip` table columns). Include at least one
-# MAGIC    blank string, one sentinel, and one **`NULL`**.
-# MAGIC 2. Normalize missing disguises to real **`NULL`** values.
-# MAGIC 3. Drop rows where **`ride_duration_mins`** is missing after normalization.
-# MAGIC 4. Fill a missing **`service_type`** with a label such as **`"unknown"`**
-# MAGIC    using **`F.coalesce`** or **`na.fill`**.
-# MAGIC 5. Show the final cleaned result.
-# MAGIC
-# MAGIC Keep the DataFrame tiny (four or five rows).
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's missing-value path:

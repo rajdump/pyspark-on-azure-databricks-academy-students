@@ -61,7 +61,6 @@
 # MAGIC | 1. Grain | What one row represents | Detect duplicates before joining |
 # MAGIC | 2. Cardinality | 1:1, 1:M, M:1, M:M labels | Predict output row count |
 # MAGIC | 3. Join syntax | String, List, Boolean forms | Write correct PySpark join conditions |
-# MAGIC | Exercise | Unmatched keys — join types | Control which rows survive |
 # MAGIC
 # MAGIC **Core habit:** predict row count → run the join → verify with `count()`.
 # COMMAND ----------
@@ -448,58 +447,6 @@ join_bool_raw.select(
     F.col("t.trip_id"),
     F.col("tt.trip_date"),
 ).show(3, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise
-# MAGIC %md
-# MAGIC ## Exercise — unmatched keys
-# MAGIC
-# MAGIC Sections 1–3 covered grain, cardinality, and syntax. One more decision:
-# MAGIC **what happens when keys don't fully overlap?** The join type decides which
-# MAGIC unmatched rows survive.
-# MAGIC
-# MAGIC | Join type | Plain English |
-# MAGIC |---|---|
-# MAGIC | **inner** | Keep only rows that match on both sides |
-# MAGIC | **left** | Keep all left rows; NULLs where right has no match |
-# MAGIC | **right** | Keep all right rows; NULLs where left has no match |
-# MAGIC | **full outer** | Keep everything; NULLs on both sides where needed |
-# MAGIC
-# MAGIC Constructed frames in the next cell:
-# MAGIC
-# MAGIC ```
-# MAGIC Left  trip_id: [1, 2, 3, 4, 5]
-# MAGIC Right trip_id: [3, 4, 5, 6, 7]
-# MAGIC ```
-# MAGIC
-# MAGIC 1. Split the keys into left-only, overlap, and right-only.
-# MAGIC 2. Predict **inner**, **left**, **right**, and **full** row counts.
-# MAGIC 3. Replace each `None` below with your prediction, then run and verify.
-
-# COMMAND ----------
-
-left_unmatched = spark.createDataFrame(  # noqa: F821
-    [(1,), (2,), (3,), (4,), (5,)],
-    ["trip_id"],
-)
-right_unmatched = spark.createDataFrame(  # noqa: F821
-    [(3,), (4,), (5,), (6,), (7,)],
-    ["trip_id"],
-)
-
-# YOUR PREDICTIONS — replace None with the row count you expect
-predictions = {
-    "inner": None,
-    "left": None,
-    "right": None,
-    "full": None,
-}
-
-for join_type, predicted in predictions.items():
-    actual = left_unmatched.join(right_unmatched, "trip_id", join_type).count()
-    match = "✓" if predicted == actual else "✗"
-    print(f"{match} {join_type:6} → predicted={predicted}, actual={actual}")
 
 # COMMAND ----------
 

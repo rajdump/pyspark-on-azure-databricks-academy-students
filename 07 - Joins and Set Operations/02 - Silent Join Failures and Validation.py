@@ -452,66 +452,6 @@ print("\u2192 Rule of thumb: if row count is close to len(left) * len(right), su
 
 # COMMAND ----------
 
-# DBTITLE 1,6. Exercise
-# MAGIC %md
-# MAGIC ## 6. Exercise — full pre-join and post-join validation
-# MAGIC
-# MAGIC **Scenario:** A `driver_payouts` table arrived from the finance system. It
-# MAGIC should have one payout per trip, but the extract has issues you need to
-# MAGIC detect.
-# MAGIC
-# MAGIC Your task:
-# MAGIC 1. Profile `driver_payouts` on `trip_id` (rows, distinct, nulls)
-# MAGIC 2. Look at the profile result — is it safe to inner join with `trip`?
-# MAGIC 3. Predict: if you inner join `trip` (100 rows, unique) with
-# MAGIC    `driver_payouts` as-is, how many rows will you get?
-# MAGIC 4. Replace `None` with your prediction, run, and verify
-# MAGIC
-# MAGIC **Think about:** Does the profile show duplicates? NULLs? What failure mode
-# MAGIC from this notebook would you hit?
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise: profile driver_payouts, predict, then verify
-# Finance extract — has issues you need to detect
-driver_payouts = spark.createDataFrame(  # noqa: F821
-    [
-        (1, 18.50),
-        (2, 10.00),
-        (2, 10.00),   # duplicate — payout processed twice
-        (3, 30.00),
-        (None, 5.00), # NULL — couldn't link to a trip
-    ],
-    ["trip_id", "payout_amount"],
-)
-
-# Step 1: Profile driver_payouts
-print("driver_payouts:")
-driver_payouts.show()
-
-payout_stats = driver_payouts.select(
-    F.count("*").alias("rows"),
-    F.countDistinct("trip_id").alias("distinct"),
-    F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
-).collect()[0]
-print(f"Profile: rows={payout_stats['rows']}, distinct={payout_stats['distinct']}, nulls={payout_stats['nulls']}")
-
-print()
-
-# Step 2: YOUR PREDICTION — inner join trip (100 unique) with driver_payouts (as-is)
-# Think: trip has keys [1..100]. driver_payouts has keys [1, 2, 2, 3, NULL].
-# Which keys overlap? What about the duplicate? What about the NULL?
-predicted_inner = None
-
-# Step 3: Verify
-actual_inner = trip.join(driver_payouts, "trip_id", "inner").count()
-mark = "✓" if predicted_inner == actual_inner else "✗"
-print(f"{mark} inner \u2192 predicted={predicted_inner}, actual={actual_inner}")
-print("\nWhy 4? trip_id 1 \u2192 1 match, trip_id 2 \u2192 2 matches (the duplicate payout),")
-print("trip_id 3 \u2192 1 match, NULL \u2192 0 matches (standard equality never matches NULL).")
-
-# COMMAND ----------
-
 # DBTITLE 1,Summary
 # MAGIC %md
 # MAGIC ## Summary — what to do before every join

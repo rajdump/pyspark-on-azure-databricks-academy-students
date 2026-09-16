@@ -251,41 +251,6 @@ manhattan_daily.show(14, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Reuse the daily tip-share pattern for a borough of your choice.
-# MAGIC
-# MAGIC Your query should:
-# MAGIC
-# MAGIC - use one CTE for the borough's daily tip
-# MAGIC - use another CTE for the fleet's daily tip
-# MAGIC - exclude rows where `trip_date` is NULL
-# MAGIC - use `:borough` instead of hard-coding the borough name
-# MAGIC - use `:min_tip = 0`
-# MAGIC - execute with `spark.sql(..., args={...})`
-# MAGIC
-# MAGIC For each date, return:
-# MAGIC
-# MAGIC - `trip_date`
-# MAGIC - borough daily tip
-# MAGIC - fleet daily tip
-# MAGIC - borough `tip_share_pct`
-# MAGIC
-# MAGIC **Hint:** Reuse section 5. Change `:borough` in `args`; keep `min_tip` at
-# MAGIC `0`.
-# MAGIC
-# MAGIC **Expected:** **14 dated rows**.
-
-# COMMAND ----------
-
-# Write a parameterized CTE query: borough daily tip / fleet daily tip.
-# Use spark.sql(..., args={"borough": "<your borough>", "min_tip": 0})
-# TODO: result = spark.sql("""...""", args={...})  # noqa: F821
-# TODO: print count (expect 14) and result.show(14, truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Two SQL patterns help when a query starts doing more than one thing:

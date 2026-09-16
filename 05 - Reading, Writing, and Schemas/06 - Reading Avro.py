@@ -506,29 +506,6 @@ roundtrip_typed.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Build a small practice extract without reusing **`payment_subset`**:
-# MAGIC
-# MAGIC 1. Read **`payment.avro`** again with the full **`payment_schema_ddl`**
-# MAGIC    (or **`payment_schema`**) into a new DataFrame (do not reuse
-# MAGIC    **`payment`** or **`payment_subset`**).
-# MAGIC 2. **`select`** exactly these three columns: **`trip_id`**,
-# MAGIC    **`surge_amount`**, **`tax_amount`**.
-# MAGIC 3. Write the result to
-# MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/payment_exercise/`**
-# MAGIC    with **`.mode("overwrite")`** using **`format("avro").save(...)`**.
-# MAGIC 4. Re-read the written folder with an explicit schema for those three
-# MAGIC    columns and print the schema. Confirm **`trip_id`** is **`bigint`** and
-# MAGIC    the amount columns are **`decimal(10,2)`**.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **When to use** — Avro for ingestion and record exchange; Parquet for

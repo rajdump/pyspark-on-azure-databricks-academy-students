@@ -26,8 +26,8 @@
 # MAGIC | `trip` | `…/curated/trip/` | 106 rows; one row per `trip_id` |
 # MAGIC | `payment` | `…/curated/payment/` | 105 rows; one row per `trip_id` |
 # MAGIC
-# MAGIC This notebook's demo rule uses `payment`'s `tip_percent_of_base`; the exercise
-# MAGIC uses `trip`'s `trip_distance_km`. Both columns were created in Notebook 03.
+# MAGIC This notebook's demo rule uses `payment`'s `tip_percent_of_base`. That
+# MAGIC column was created in Notebook 03.
 
 # COMMAND ----------
 
@@ -177,37 +177,6 @@ payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC be useful when Python, Pandas, or NumPy logic is genuinely required, but they
 # MAGIC remain secondary to Spark built-in functions. This course does not cover them
 # MAGIC further.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 4. Exercise
-# MAGIC
-# MAGIC New requirement: bucket curated `trip` rows into a `trip_distance_band` from
-# MAGIC `trip_distance_km`:
-# MAGIC
-# MAGIC | `trip_distance_km` | `trip_distance_band` |
-# MAGIC |---|---|
-# MAGIC | NULL | `unknown` |
-# MAGIC | `< 5` | `short` |
-# MAGIC | `5` – `< 15` | `medium` |
-# MAGIC | `>= 15` | `long` |
-# MAGIC
-# MAGIC Using `trip_curated`:
-# MAGIC
-# MAGIC 1. Build `trip_distance_band` with built-in `F.when`.
-# MAGIC 2. In a markdown cell or short comment, explain why a Python UDF is unnecessary
-# MAGIC    for this rule.
-# MAGIC 3. Name one transformation that could justify a UDF because it requires custom
-# MAGIC    Python logic or a Python library and has no suitable Spark built-in function
-# MAGIC    (you do not need to implement it).
-# MAGIC
-# MAGIC Do not write any result — this notebook only reads `curated/trip/` and
-# MAGIC `curated/payment/`, never overwrites them.
-
-# COMMAND ----------
-
-# Your code here.
 
 # COMMAND ----------
 

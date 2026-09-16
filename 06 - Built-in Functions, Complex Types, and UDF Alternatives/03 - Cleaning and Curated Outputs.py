@@ -687,49 +687,6 @@ payment_curated.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Exercise
-# MAGIC
-# MAGIC New payment records arrive with the same categories of problems demonstrated
-# MAGIC above, but different values. Build `payment_exercise` from
-# MAGIC `payment_exercise_source`:
-# MAGIC
-# MAGIC 1. Safely cast `trip_id` and `base_fare_amount` with `try_cast` to their
-# MAGIC    canonical types.
-# MAGIC 2. Reject the record whose `trip_id` is NULL after casting.
-# MAGIC 3. Trim and lowercase `payment_method`; replace a blank or NULL method with
-# MAGIC    `unknown`.
-# MAGIC 4. Convert a negative `base_fare_amount` to NULL.
-# MAGIC 5. Select `trip_id`, `payment_method`, and `base_fare_amount`, then order by
-# MAGIC    `trip_id` and show the result.
-# MAGIC
-# MAGIC Keep this as one forward-moving chain and do not write it. Your result should
-# MAGIC have four records. Trip `202` should show `payment_method = "unknown"`
-# MAGIC (blank source value). Trip `203` should show `base_fare_amount = NULL`
-# MAGIC (negative source value).
-
-# COMMAND ----------
-
-payment_exercise_source = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    [
-        ("201", " Card ", "45.00", "5.00", "3.50", "6.00", "0.00", "38.00"),
-        ("202", "", "30.00", "0.00", "2.40", "3.00", "0.00", "25.00"),
-        ("203", "Cash", "-12.00", "0.00", "0.96", "1.50", "0.00", "10.00"),
-        ("204", "wallet", "27.50", "2.00", "2.20", "3.00", "0.00", "22.00"),
-        (None, "Card", "18.00", "0.00", "1.44", "2.00", "0.00", "15.00"),
-    ],
-    payment_string_schema_ddl,
-)
-
-print("New payment records for the exercise:")
-payment_exercise_source.show(truncate=False)
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Read each full-size controlled-bad CSV with a string schema so `try_cast` could

@@ -214,24 +214,6 @@ df.summary("count", "min", "25%", "50%", "75%", "max").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC
-# MAGIC Use a second small rideshare-style DataFrame named `my_df` and complete:
-# MAGIC
-# MAGIC 1. Show rows with one `show(...)` call and `display(my_df)`.
-# MAGIC 2. Inspect structure with `printSchema()`, `schema`, and `dtypes`.
-# MAGIC 3. Run `count()` and `isEmpty()`.
-# MAGIC 4. Run one stats method (`describe()` or `summary()`).
-# MAGIC 5. Write one short note: which method you used that triggers Spark work
-# MAGIC    and which method you used that is metadata-oriented.
-
-# COMMAND ----------
-
-# Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC Recap this notebook's inspection path:

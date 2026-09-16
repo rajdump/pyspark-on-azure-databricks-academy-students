@@ -31,7 +31,6 @@
 # MAGIC | 2 | Window aggregates | Add counts, totals, and averages to each detail row |
 # MAGIC | 3 | Ranking functions | Rank rows within each group and handle ties |
 # MAGIC | 4 | Filter after rank | Keep the top rows per group |
-# MAGIC | Exercise | Service windows | Add service totals and a duration rank to each trip |
 # MAGIC
 # MAGIC Run Module 8 **01–04** and Module 7 **01–07**, especially
 # MAGIC **`07 - Build Unified Curated Tables`** (managed tables used here).
@@ -46,7 +45,7 @@
 # MAGIC
 # MAGIC | DataFrame | Grain | Used for |
 # MAGIC |---|---|---|
-# MAGIC | `trip_enriched` | One row per `trip_id` (106) | Section 1, exercise |
+# MAGIC | `trip_enriched` | One row per `trip_id` (106) | Section 1 |
 # MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–4 |
 # MAGIC
 # MAGIC `trip_driver_assignment` already contains `trip_distance_miles` and
@@ -361,72 +360,6 @@ top2_trips_per_driver_rows = top2_trips_per_driver.count()
 print(f"top-2 input: observed={driver_with_metrics_rows}, expected=100")
 print(f"top-2 output: observed={top2_trips_per_driver_rows}, expected=24")
 print("filter reduced driver-trip rows:", top2_trips_per_driver_rows < driver_with_metrics_rows)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise - Add service metrics and duration rank
-# MAGIC %md
-# MAGIC ## Exercise — Add service totals and a duration rank to each trip
-# MAGIC
-# MAGIC Repeat Sections 2 and 3 on `trip_enriched`, partitioned by `service_type`.
-# MAGIC
-# MAGIC Add these columns to every trip row (keep all **106** rows):
-# MAGIC
-# MAGIC | Column | Window pattern |
-# MAGIC |---|---|
-# MAGIC | `service_trip_count` | Count of trips per service type |
-# MAGIC | `service_avg_ride_duration_mins` | Average `ride_duration_mins` per service type, rounded to 2 |
-# MAGIC | `ride_duration_dense_rank` | `dense_rank` of duration within service type (longest = 1) |
-# MAGIC
-# MAGIC Fill in the two window specs and your row-count prediction. Every `STANDARD`
-# MAGIC row should show `service_trip_count` **55**.
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise - Build, verify, and inspect
-predicted_output_rows = None  # TODO: replace with your prediction
-
-# TODO: Window.partitionBy("service_type")
-service_aggregate_window = None
-
-# TODO: Window.partitionBy("service_type").orderBy(F.col("ride_duration_mins").desc())
-service_duration_rank_window = None
-
-service_window_summary = (
-    trip_enriched.withColumn(
-        "service_trip_count",
-        F.count(F.col("trip_id")).over(service_aggregate_window),
-    )
-    .withColumn(
-        "service_avg_ride_duration_mins",
-        F.round(
-            F.avg(F.col("ride_duration_mins")).over(service_aggregate_window),
-            2,
-        ),
-    )
-    .withColumn(
-        "ride_duration_dense_rank",
-        F.dense_rank().over(service_duration_rank_window),
-    )
-)
-
-actual = service_window_summary.count()
-match = "✓" if predicted_output_rows == actual else "✗"
-print(f"{match} predicted={predicted_output_rows}, actual={actual}")
-
-service_window_summary.filter(
-    F.col("service_type") == "STANDARD",
-).select(
-    "service_type",
-    "trip_id",
-    "ride_duration_mins",
-    "service_trip_count",  # derived column
-    "service_avg_ride_duration_mins",  # derived column
-    "ride_duration_dense_rank",  # derived column
-).orderBy(
-    "ride_duration_dense_rank",
-    "trip_id",
-).show(30, truncate=False)
 
 # COMMAND ----------
 

@@ -24,7 +24,6 @@
 # MAGIC | 1 | `collect_list` / `collect_set` | Build a driver profile showing all service types handled, or only the unique service types. |
 # MAGIC | 2 | `avg` vs `percentile_approx` (p50 / p90) | Compare average trip distance with median and upper-range distance thresholds. |
 # MAGIC | 3 | `countDistinct` | Count how many unique pickup-to-drop-off routes appear. |
-# MAGIC | Exercise | Same three patterns by `pickup_borough` | Apply the same aggregation patterns to borough-level questions. |
 # COMMAND ----------
 
 # DBTITLE 1,Setup
@@ -34,7 +33,7 @@
 # MAGIC | DataFrame | Grain | Used for |
 # MAGIC |---|---|---|
 # MAGIC | `trip_driver_assignment` | One driver-trip assignment | Section 1 (collections) |
-# MAGIC | `trip_enriched` | One trip | Sections 2–3 and exercise |
+# MAGIC | `trip_enriched` | One trip | Sections 2–3 |
 
 # COMMAND ----------
 
@@ -143,66 +142,6 @@ trip_enriched.agg(
         F.col("dropoff_location_id"),
     ).alias("unique_route_count"),
 ).show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise
-# MAGIC %md
-# MAGIC ## Exercise — pickup-borough summaries
-# MAGIC
-# MAGIC Same three patterns, one row per `pickup_borough`.
-# MAGIC
-# MAGIC 1. Unique service types per borough
-# MAGIC 2. p50 and p90 of `ride_duration_mins` per borough
-# MAGIC 3. Distinct `dropoff_location_id` count per borough
-# MAGIC
-# MAGIC Predict the borough group count, complete the TODOs, then verify.
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 1 - Collections
-predicted_borough_groups = None  # TODO: replace with your prediction
-
-borough_services = trip_enriched.groupBy("pickup_borough").agg(
-    F.count("*").alias("trip_count"),
-    # TODO: add sorted unique service types as unique_service_types
-)
-
-borough_services.orderBy("pickup_borough").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 2 - Percentiles
-borough_duration_percentiles = trip_enriched.groupBy("pickup_borough").agg(
-    F.count(F.col("ride_duration_mins")).alias("known_duration_count"),
-    # TODO: add approximate p50 as p50_duration_mins
-    # TODO: add approximate p90 as p90_duration_mins
-)
-
-borough_duration_percentiles.orderBy("pickup_borough").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise step 3 - Distinct counts
-borough_dropoff_counts = trip_enriched.groupBy("pickup_borough").agg(
-    F.count("*").alias("trip_count"),
-    # TODO: add distinct drop-off locations as unique_dropoff_location_count
-)
-
-borough_dropoff_counts.orderBy("pickup_borough").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise check - Verify grain
-summary_group_counts = {
-    "borough_services": borough_services.count(),
-    "borough_duration_percentiles": borough_duration_percentiles.count(),
-    "borough_dropoff_counts": borough_dropoff_counts.count(),
-}
-
-for summary_name, actual_groups in summary_group_counts.items():
-    matches = "✓" if predicted_borough_groups == actual_groups else "✗"
-    print(f"{matches} {summary_name}: predicted={predicted_borough_groups}, actual={actual_groups}")
 
 # COMMAND ----------
 

@@ -60,6 +60,7 @@ deployable batch capstone — see the [phase list](COURSE_MODULES.md#phases).
 
 - **Full roadmap and current status:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — module purposes, topics, prerequisites, and planned progression
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
+- **Modules 1–2:** Read the matching page in the course Notion hub before each Module 1 notebook and Module 2 notebooks **01–05**. The notebooks are labs.
 - **Before Module 5:** Review the [module-specific environment and privilege requirements](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01).
 
 ## License

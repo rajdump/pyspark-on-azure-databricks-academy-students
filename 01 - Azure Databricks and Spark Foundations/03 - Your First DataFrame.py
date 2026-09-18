@@ -1,9 +1,13 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 03 - Your First DataFrame
 # MAGIC
-# MAGIC First DataFrame from in-notebook Python rows — not file reads from
-# MAGIC `data/raw/`.
+# MAGIC Read **13 - Your First DataFrame** in the course Notion hub first. Then
+# MAGIC attach classic all-purpose compute and run the cells below.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -16,29 +20,14 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Before you run any code cells:
-# MAGIC
-# MAGIC 1. Open this notebook in your Azure Databricks workspace (via the Git folder
-# MAGIC    that tracks this course repository).
-# MAGIC 2. In the notebook toolbar, open the **Connect** (compute) dropdown.
-# MAGIC 3. Select classic **all-purpose** compute, or start it if it is stopped.
-# MAGIC 4. Wait until the notebook shows that it is attached (connected).
-# MAGIC
-# MAGIC If a cell fails with a message about no cluster or compute, attach compute
-# MAGIC and try again. You do not need any data files for this notebook.
+# MAGIC Attach classic **all-purpose** compute before you run any code cells.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Build a small rideshare DataFrame
 # MAGIC
-# MAGIC In production pipelines, DataFrames usually come from files or tables. For
-# MAGIC a first step, create one directly from Python rows so you can focus on the
-# MAGIC DataFrame itself — not schemas or file formats.
-# MAGIC
-# MAGIC `spark.createDataFrame(rows, columns)` turns a list of tuples into a
-# MAGIC DataFrame and names the columns. The names match the course `trip` table
-# MAGIC so the habit carries over later.
+# MAGIC In practice, DataFrames are usually created from files or tables.
 
 # COMMAND ----------
 
@@ -64,15 +53,7 @@ trips_df = spark.createDataFrame(trips, columns)
 # MAGIC %md
 # MAGIC ## Look at the rows: `show()` vs `display()`
 # MAGIC
-# MAGIC Before you transform data, look at it. Two common ways to view rows:
-# MAGIC
-# MAGIC | Method | What you get | When to use it |
-# MAGIC |---|---|---|
-# MAGIC | `show()` | Plain-text table in the cell output | Quick check; works in Spark anywhere |
-# MAGIC | `display()` | Interactive Databricks table (sort, filter, chart) | Exploring in the notebook UI |
-# MAGIC
-# MAGIC `show()` is core Spark. `display()` is Databricks-only and better for
-# MAGIC interactive exploration.
+# MAGIC `show()` is Spark text. `display()` is the Databricks interactive table.
 
 # COMMAND ----------
 
@@ -87,15 +68,7 @@ display(trips_df)
 # MAGIC %md
 # MAGIC ## Look at the structure: `printSchema()`
 # MAGIC
-# MAGIC A DataFrame has rows **and** a structure: column names, types, and
-# MAGIC nullability. `printSchema()` prints that structure.
-# MAGIC
-# MAGIC You did not define types yourself. Spark **inferred** them from the Python
-# MAGIC values — this is the **default (inferred) schema**. Convenient for a first
-# MAGIC look, but **not recommended for production**. Inference reflects the sample
-# MAGIC values you passed in, not a deliberate data model (for example, whole
-# MAGIC numbers may become `long` when your real table expects `int`). Later modules
-# MAGIC cover explicit schemas when you need controlled types.
+# MAGIC Types were inferred. Fine for this demo — not for production.
 
 # COMMAND ----------
 
@@ -106,14 +79,8 @@ trips_df.printSchema()
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC You created and inspected your first DataFrame by:
+# MAGIC - `spark.createDataFrame(rows, columns)` built the DataFrame.
+# MAGIC - `show()` / `display()` show rows; `printSchema()` shows structure.
+# MAGIC - Inferred schema is a demo default, not a production schema.
 # MAGIC
-# MAGIC - Building rows in Python and naming columns with
-# MAGIC   `spark.createDataFrame(rows, columns)`
-# MAGIC - Viewing values with `show()` (quick text) and `display()` (interactive
-# MAGIC   Databricks table)
-# MAGIC - Checking structure with `printSchema()` — seeing Spark's **default
-# MAGIC   inferred schema**, which is fine for demos but not recommended for
-# MAGIC   production pipelines
-# MAGIC
-# MAGIC **Next:** Module 2 — DataFrame Fundamentals (`01 - Creating DataFrames`).
+# MAGIC Next up: Module 2 — DataFrame Fundamentals (`01 - Creating DataFrames`).

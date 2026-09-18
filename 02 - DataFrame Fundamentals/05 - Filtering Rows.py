@@ -1,32 +1,27 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 05 - Filtering Rows
 # MAGIC
-# MAGIC Keep rows with `filter` / `where`, including intro NULL and blank traps.
+# MAGIC Read **Filtering Rows** in the course Notion hub first. Then attach
+# MAGIC classic all-purpose compute and run the cells below.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Filter with Column ops and SQL strings; combine with `AND` vs `&`
 # MAGIC - Use `|`, `~`, `isin`, `between`, `like`
 # MAGIC - Apply intro NULL checks (`isNull` / `isNotNull`); empty string ≠ NULL
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup DataFrame for filter examples
+# MAGIC ## Setup
 # MAGIC
-# MAGIC Notebook 04 built column logic with SQL expression strings. The same
-# MAGIC predicates can appear inside **`filter`** / **`where`** to keep only matching
-# MAGIC rows — or you can combine **`F.col`** comparisons with `&`, `|`, and `~`.
-# MAGIC
-# MAGIC Create one small DataFrame with deliberate quality issues to filter against:
-# MAGIC
-# MAGIC - one `NULL` `service_type`
-# MAGIC - one empty-string `service_type`
-# MAGIC - one `NULL` `ride_duration_mins`
-# MAGIC - one negative `trip_distance_miles`
-# MAGIC
-# MAGIC Deeper NULL semantics and full quality pipelines stay for Module 3;
-# MAGIC here you learn the intro checks only.
+# MAGIC Attach classic **all-purpose** compute. This frame includes NULL, empty-string,
+# MAGIC and negative-distance rows.
 
 # COMMAND ----------
 
@@ -56,8 +51,7 @@ df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedV
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Confirm the sample rows before filtering — the same habit as inspection
-# MAGIC in the previous notebook.
+# MAGIC Confirm the sample rows.
 
 # COMMAND ----------
 
@@ -66,11 +60,7 @@ df.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Filter rows with `filter` / `where`
-# MAGIC
-# MAGIC **`filter(condition)`** returns a new DataFrame whose plan includes the row
-# MAGIC condition. It does not change the original DataFrame. **`where`** is an alias
-# MAGIC for **`filter`** — same method, different name.
+# MAGIC ## Filter with `filter` / `where`
 # MAGIC
 # MAGIC **Business question:** Dispatch planning needs trips longer than ten miles.
 
@@ -80,33 +70,19 @@ df.filter(F.col("trip_distance_miles") > 10).show()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC The same row condition with **`where`**:
-
-# COMMAND ----------
-
-df.where(F.col("service_type") == "Shared").show()
+df.where(F.col("trip_distance_miles") > 10).show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Combine conditions: Column operators vs SQL strings
+# MAGIC ## Combine conditions
 # MAGIC
-# MAGIC **Business question:** A service-quality report needs Standard trips
-# MAGIC longer than six miles.
-# MAGIC
-# MAGIC **`AND`** in a SQL predicate string and **`&`** between Column expressions
-# MAGIC perform the same logical AND — but they belong to different styles. Wrap each
-# MAGIC Column comparison in parentheses when you use **`&`**.
+# MAGIC **Business question:** A service-quality report needs Standard trips longer
+# MAGIC than six miles.
 
 # COMMAND ----------
 
 df.filter("service_type = 'Standard' AND trip_distance_miles > 6").show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC The same predicate as a SQL string passed through **`F.expr`**:
 
 # COMMAND ----------
 
@@ -116,23 +92,15 @@ df.filter(F.expr(standard_long_sql)).show()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC The Column-expression form with **`&`**:
-
-# COMMAND ----------
-
 df.filter((F.col("service_type") == "Standard") & (F.col("trip_distance_miles") > 6)).show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Do not use Python `and` with Column conditions
+# MAGIC ## Do not use Python `and`, `or`, or `not`
 # MAGIC
-# MAGIC Python **`and`**, **`or`**, and **`not`** expect plain Python booleans. A
-# MAGIC Column condition is not a boolean — PySpark raises an error when Python tries
-# MAGIC to treat it as one. The next cell demonstrates **`and`**; **`or`** and **`not`**
-# MAGIC fail the same way. Use **`&`**, **`|`**, and **`~`** between Column
-# MAGIC conditions instead.
+# MAGIC Python `and`, `or`, and `not` do not work with PySpark Column expressions. Use `&`, `|`, and `~` instead.
+# MAGIC
 
 # COMMAND ----------
 
@@ -144,13 +112,10 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## More filter helpers: `|`, `~`, `isin`, `between`, `like`
+# MAGIC ## Filter with `|`
 # MAGIC
 # MAGIC **Business question:** Peak-hour analysis needs Premium trips or any trip
 # MAGIC longer than twenty miles.
-# MAGIC
-# MAGIC Use **`|`** when a row can match either condition (wrap each side in
-# MAGIC parentheses).
 
 # COMMAND ----------
 
@@ -159,9 +124,9 @@ df.filter((F.col("service_type") == "Premium") | (F.col("trip_distance_miles") >
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use **`~`** to reverse a Column condition. The next filter excludes Shared
-# MAGIC trips. Rows whose `service_type` is **`NULL`** are also excluded — a
-# MAGIC comparison with **`NULL`** is unknown, not true (see the NULL section below).
+# MAGIC ## Reverse with `~`
+# MAGIC
+# MAGIC **Business question:** A mix report needs every trip except Shared.
 
 # COMMAND ----------
 
@@ -170,8 +135,9 @@ df.filter(~(F.col("service_type") == "Shared")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`isin(...)`** checks whether a value matches one of several options — cleaner
-# MAGIC than chaining many **`==`** comparisons with **`|`**.
+# MAGIC ## Match several values with `isin`
+# MAGIC
+# MAGIC **Business question:** A fare review needs Standard and Premium trips only.
 
 # COMMAND ----------
 
@@ -180,8 +146,9 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`between(lower, upper)`** is an inclusive range — values equal to either
-# MAGIC boundary match.
+# MAGIC ## Inclusive range with `between`
+# MAGIC
+# MAGIC **Business question:** A mid-range report needs trips from 3 to 12 miles.
 
 # COMMAND ----------
 
@@ -190,21 +157,8 @@ df.filter(F.col("trip_distance_miles").between(3, 12)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. The first
-# MAGIC example uses **`'%'`** — it matches any non-**`NULL`** string, including an
-# MAGIC **empty string** (trip **`1008`**). Trip **`1007`** (`NULL`) still will not
-# MAGIC appear.
-
-# COMMAND ----------
-
-df.filter(F.col("service_type").like("%")).show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **`S%`** means “starts with **`S`**” — **`%`** is a wildcard for the rest of
-# MAGIC the name. Trip **`1008`** (empty string) will not match; trip **`1007`**
-# MAGIC (`NULL`) still will not appear.
+# MAGIC ## Pattern match with `like`
+# MAGIC **Business question:** `service_type` values that start with `S`.
 
 # COMMAND ----------
 
@@ -213,22 +167,10 @@ df.filter(F.col("service_type").like("S%")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > **Good to know:** Compare the two **`like`** results above — **`LIKE`** never
-# MAGIC > matches **`NULL`** (trip **`1007`** missing from both). An **empty string**
-# MAGIC > can match **`'%'`** but not **`S%`** (trip **`1008`**).
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Intro NULL: `isNull` / `isNotNull`
+# MAGIC ## Intro NULL
 # MAGIC
-# MAGIC **Business question:** A data-quality review needs rows where
-# MAGIC `service_type` was never captured.
-# MAGIC
-# MAGIC Comparing a column to **`None`** with **`==`** or **`!=`** does **not** find
-# MAGIC NULLs in SQL semantics — the result is **unknown**, and a filter keeps only
-# MAGIC rows where the condition is **true**. The next two cells print a **count of
-# MAGIC zero**; use **`isNull()`** / **`isNotNull()`** instead.
+# MAGIC **Business question:** A data-quality review needs rows where `service_type`
+# MAGIC was never captured.
 
 # COMMAND ----------
 
@@ -240,37 +182,29 @@ print("!= None row count:", df.filter(F.col("service_type") != None).count())  #
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC `isNull()` finds the missing `service_type`.
+
+# COMMAND ----------
+
 df.filter(F.col("service_type").isNull()).show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`isNotNull()`** keeps rows where the column has a value (including an empty
-# MAGIC string — empty is not NULL).
+# MAGIC `isNotNull()` keeps a value, including an empty string.
 
 # COMMAND ----------
 
-df.filter(F.col("ride_duration_mins").isNotNull()).show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC > **Good to know:** Three-valued logic (`TRUE`, `FALSE`, `UNKNOWN`) and
-# MAGIC > NULL-safe predicates are covered in depth in Module 3. Here, reach
-# MAGIC > for **`isNull()`** / **`isNotNull()`** whenever the requirement mentions
-# MAGIC > missing values.
+df.filter(F.col("service_type").isNotNull()).show()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Empty string is not NULL
 # MAGIC
-# MAGIC **Business question:** A validation report needs rows where `service_type`
-# MAGIC was submitted as blank — not missing, but empty.
-# MAGIC
-# MAGIC Trip **`1008`** has an empty string for `service_type`. **`isNull()`** does not
-# MAGIC find it — check **`""`** separately when blank and missing mean different
-# MAGIC things.
+# MAGIC **Business question:** A validation report needs rows where `service_type` was
+# MAGIC submitted as blank — not missing, but empty.
 
 # COMMAND ----------
 
@@ -279,22 +213,10 @@ df.filter(F.col("service_type") == "").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Trip **`1007`** has a **`NULL`** `service_type`. It does not appear in Shared,
-# MAGIC empty-string, or **`~Shared`** results above because comparisons involving
-# MAGIC **`NULL`** are unknown. When the requirement is truly “missing value”, use
-# MAGIC **`isNull()`**, not **`== ""`**.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Chain a filter into an operations-style output
+# MAGIC ## Chain a filter into one output
 # MAGIC
 # MAGIC **Business question:** A downstream dashboard needs trips with a known,
 # MAGIC non-empty service type and positive distance.
-# MAGIC
-# MAGIC Define one reusable filter expression, then filter, add columns, and project
-# MAGIC the shape the dashboard reads. Reuse named expressions from earlier notebooks
-# MAGIC where they fit — one definition, no copies that can drift apart.
 
 # COMMAND ----------
 
@@ -329,8 +251,7 @@ usable_trips.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Confirm the source DataFrame is unchanged — filtering built a new output
-# MAGIC without mutating `df`.
+# MAGIC Confirm `df` is unchanged.
 
 # COMMAND ----------
 
@@ -342,20 +263,10 @@ print("original df row count: ", df.count())
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC Recap this notebook's filter path:
+# MAGIC - `filter` / `where` — same method; new DataFrame
+# MAGIC - Combine with SQL `AND` or Column `&` — not Python `and`
+# MAGIC - `|`, `~`, `isin`, `between`, `like`
+# MAGIC - `isNull()` / `isNotNull()` — not `== None`
+# MAGIC - Empty string is not NULL
 # MAGIC
-# MAGIC - **`filter` / `where`** — same method; returns a new DataFrame; does not
-# MAGIC   mutate the input
-# MAGIC - **Combine conditions** — SQL `AND` in strings or **`F.expr`**; Column
-# MAGIC   **`&`** with parentheses; not Python **`and`**
-# MAGIC - **`|`**, **`~`**, **`isin`**, **`like`**, **`between`** — common row
-# MAGIC   helpers on Column expressions
-# MAGIC - **Intro NULL** — **`== None`** / **`!= None`** do not find NULLs; use
-# MAGIC   **`isNull()`** / **`isNotNull()`**
-# MAGIC - **Empty string** — not NULL; check **`== ""`** separately when blank
-# MAGIC   matters
-# MAGIC - **Reusable filter** — name one condition; chain filter with transforms
-# MAGIC   for downstream output
-# MAGIC
-# MAGIC Next up: `06 - Querying DataFrames with SQL` — give a DataFrame a temporary
-# MAGIC SQL name and query it with `%sql` and `spark.sql`.
+# MAGIC Next up: `06 - Querying DataFrames with SQL`.

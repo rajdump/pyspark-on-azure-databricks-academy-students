@@ -46,15 +46,6 @@ print(f"Spark application id: {spark.conf.get('spark.app.id')}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### What you should see
-# MAGIC
-# MAGIC - `spark is a: SparkSession`
-# MAGIC - A Spark version string (for DBR 17.3 LTS this is in the Spark 4.0 line)
-# MAGIC - An application id like `app-...` (the exact id varies)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - `spark` is a **SparkSession**.

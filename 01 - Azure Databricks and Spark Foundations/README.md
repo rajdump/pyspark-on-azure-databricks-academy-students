@@ -21,6 +21,9 @@ By the end of this module, you'll be able to:
 None — first module. Assumes the audience baseline in
 [`README.md`](../README.md#who-this-is-for): basic Python, basic SQL.
 
+Read the matching page in the course Notion hub before each notebook
+(Notion 10, 12, and 13).
+
 ## Dataset
 
 Small **ad-hoc** rideshare-flavored DataFrames built in code (a few rows), not
@@ -42,8 +45,8 @@ all-purpose compute.
 
 ### Lesson flow
 
-Read Notion 10; attach classic all-purpose; print `type(spark).__name__`,
-`spark.version`, and `spark.app.id`.
+Print `type(spark).__name__`, `spark.version`, and
+`spark.conf.get("spark.app.id")`.
 
 ### Expected state
 
@@ -74,8 +77,8 @@ attached compute.
 
 ### Lesson flow
 
-Shared Python state (`base_fare`); `%sql` hello; expected failing
-`%sql SELECT base_fare`; `%sh`; `%fs ls /databricks-datasets`;
+Shared Python state (`base_fare`); `%sql` hello; `%sql SELECT base_fare`;
+`%sh` (`python3 --version`, `pwd`); `%fs ls /databricks-datasets`;
 `dbutils.fs.ls`.
 
 ### Expected state
@@ -92,8 +95,8 @@ Expected failure: `%sql SELECT base_fare` (`AnalysisException`).
 
 ### Context
 
-First DataFrame from in-notebook Python rows — not file reads from
-`data/raw/`.
+Lab after Notion 13. First DataFrame from in-notebook Python rows — not
+file reads from `data/raw/`.
 
 ### Learning objectives
 

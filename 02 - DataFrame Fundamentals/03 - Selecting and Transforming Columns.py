@@ -1,27 +1,28 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 03 - Selecting and Transforming Columns
 # MAGIC
-# MAGIC Reshape columns with the DataFrame API — the transforms later notebooks reuse.
+# MAGIC Read **Selecting and Transforming Columns** in the course Notion hub first.
+# MAGIC Then attach classic all-purpose compute and run the cells below.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Select, add, rename, recalculate, and drop columns
+# MAGIC - Transforms return a **new** DataFrame.
 # MAGIC - Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
 # MAGIC   `F.when` / `otherwise`
 # MAGIC - Choose `select` vs `withColumn` and chain into a small ops-style output
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup DataFrame for column transforms
+# MAGIC ## Setup
 # MAGIC
-# MAGIC Most batch work reshapes columns: keep what downstream needs, compute
-# MAGIC derived fields, rename for clarity, drop the rest.
-# MAGIC
-# MAGIC Create one small DataFrame to reuse across every example. In production,
-# MAGIC you reshape into a **new** DataFrame and leave the source unchanged until
-# MAGIC you deliberately write results — that immutability habit prevents silent
-# MAGIC overwrites in long pipelines.
+# MAGIC Attach classic **all-purpose** compute.
 
 # COMMAND ----------
 
@@ -47,8 +48,7 @@ df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedV
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Confirm the sample rows before reshaping — the same habit as inspection
-# MAGIC in the previous notebook.
+# MAGIC Confirm the sample rows before reshaping.
 
 # COMMAND ----------
 
@@ -57,13 +57,9 @@ df.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Project and reorder with `select`
+# MAGIC ## Select and reorder columns
 # MAGIC
-# MAGIC **Business question:** A first dashboard needs trip identity, service type,
-# MAGIC and distance — not every pickup zone column.
-# MAGIC
-# MAGIC `select` returns a new DataFrame with only the columns you name, in the
-# MAGIC order you list them. The simplest form uses column names as strings.
+# MAGIC Only the columns you name, in that order. Strings are enough here.
 
 # COMMAND ----------
 
@@ -72,9 +68,7 @@ df.select("trip_id", "service_type", "trip_distance_miles").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `select` also **reorders** columns. Downstream tools (BI exports, CSV
-# MAGIC writers) often expect a stable column order — define it explicitly rather
-# MAGIC than relying on source layout.
+# MAGIC `select` also reorders columns.
 
 # COMMAND ----------
 
@@ -83,10 +77,9 @@ df.select("service_type", "trip_id").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## `select` returns a new DataFrame
+# MAGIC ### `select` returns a new DataFrame
 # MAGIC
-# MAGIC Spark DataFrames are **immutable**. `select` does not change `df`; it
-# MAGIC returns a new DataFrame. Assign the result when you need to keep it.
+# MAGIC `df` is unchanged. Assign the result to keep it.
 
 # COMMAND ----------
 
@@ -97,15 +90,16 @@ print("original df columns:  ", df.columns)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Column-name strings vs `F.col`
+# MAGIC ## Build column expressions with `F.col`
 # MAGIC
-# MAGIC Use a **column-name string** when you only need the column unchanged.
+# MAGIC A column-name string cannot build expressions.
 # MAGIC
-# MAGIC Use **`F.col("name")`** when you need a **Column expression** — alias,
-# MAGIC arithmetic, cast, comparison, or conditional logic.
-# MAGIC
-# MAGIC The next example renames `trip_distance_miles` to `distance_mi`, so it
-# MAGIC needs `F.col`, not a plain string.
+# MAGIC Use `F.col("name")` when you need an expression, such as an alias, arithmetic, cast, or condition.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Alias
 
 # COMMAND ----------
 
@@ -119,12 +113,9 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** Regional teams need trip distance reported in
-# MAGIC kilometres alongside miles.
+# MAGIC ### Arithmetic
 # MAGIC
-# MAGIC `F.col` also supports calculations. Define the expression once in a
-# MAGIC variable, then reuse it — one definition, no copies that can drift apart
-# MAGIC in a pipeline.
+# MAGIC Define the kilometre expression once, then reuse it.
 
 # COMMAND ----------
 
@@ -141,19 +132,9 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Light `cast` and constants with `F.lit`
+# MAGIC ### Cast
 # MAGIC
-# MAGIC **Business question:** A BI export needs trip IDs as text, and downstream
-# MAGIC audits need every row tagged with a source system.
-# MAGIC
-# MAGIC **`.cast("type")`** converts a column's type. Cast with intent — some
-# MAGIC conversions lose precision. Deeper casting rules and failure modes come in
-# MAGIC Module 3; here, cast only when the target type is clear (for example
-# MAGIC formatting an ID as text for a dashboard export).
-# MAGIC
-# MAGIC **`F.lit(value)`** wraps a plain Python value as a Column — the same
-# MAGIC constant on every row (for example a source-system tag). You do not need
-# MAGIC `F.lit` for a comparison like `F.col("x") > 10`; Spark wraps the literal.
+# MAGIC `cast` changes type. Cast with intent.
 
 # COMMAND ----------
 
@@ -164,22 +145,21 @@ df.select(
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Constants with `F.lit`
+# MAGIC
+# MAGIC `F.lit` is the same constant on every row. It is not `F.col`.
+
+# COMMAND ----------
+
 df.select("trip_id", F.lit("mobile_app").alias("source_system")).show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Conditional columns: `F.when` / `otherwise`
+# MAGIC ### Conditional columns with `F.when`
 # MAGIC
-# MAGIC **Business question:** Trip reporting and dashboards need distance-band
-# MAGIC labels — `short`, `medium`, and `long`.
-# MAGIC
-# MAGIC **`F.when(condition, value)`** is column-level if/else logic. Chain more
-# MAGIC `.when(...)`, then finish with `.otherwise(...)`. Without `otherwise`,
-# MAGIC unmatched rows get `NULL`.
-# MAGIC
-# MAGIC Store the rule once and reuse it — the same pattern you will see again
-# MAGIC with SQL expression strings in the next notebook.
+# MAGIC If/else on a column. Without `otherwise`, unmatched rows are `NULL`.
 
 # COMMAND ----------
 
@@ -198,46 +178,51 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Add or replace columns: `withColumn`
+# MAGIC ## Add column with `withColumn`
 # MAGIC
-# MAGIC **`withColumn(name, expression)`** returns a new DataFrame:
-# MAGIC
-# MAGIC - If `name` does not exist → adds a derived column.
-# MAGIC - If `name` already exists → recalculates that column from the expression.
-# MAGIC
-# MAGIC The first example adds `trip_distance_km` by reusing `km_expr`.
+# MAGIC New name → add. Reuses `km_expr`.
 
 # COMMAND ----------
 
 df_km = df.withColumn("trip_distance_km", km_expr)
-df_km.select("trip_id", "trip_distance_miles", "trip_distance_km").show()
+df_km.show()
+
+# COMMAND ----------
+
+print("df columns:    ", df.columns)
+print("df_km columns: ", df_km.columns)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Choose `select` vs `withColumn` when adding a column
+# MAGIC ## Add a column with `select`
 # MAGIC
-# MAGIC The cell above added `trip_distance_km` with `withColumn`. The same
-# MAGIC result can use `select("*", expression)` — keep every existing column and
-# MAGIC append the derived one.
+# MAGIC To keep all existing columns plus one new column, use withColumn or select("*", expression).
+# MAGIC
+# MAGIC To keep only certain columns plus one new column, use select with the required columns and the expression.
+# MAGIC
+# MAGIC This avoids the extra step of adding a column first and then dropping unwanted columns.
+# MAGIC
 
 # COMMAND ----------
 
-df.select("*", km_expr.alias("trip_distance_km")).select(
-    "trip_id", "trip_distance_miles", "trip_distance_km"
-).show()
+df_km_sel_cols = df.select(
+    "trip_id",
+    "trip_distance_miles",
+    km_expr.alias("trip_distance_km"),
+)
+
+df_km_sel_cols.show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC For one new column, either style is fine — pick the one that reads more
-# MAGIC clearly in your pipeline.
+# MAGIC Choose by the output shape you want, not by habit.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC A `withColumn` expression can also produce a true/false flag — useful for
-# MAGIC downstream filters or quality checks.
+# MAGIC `withColumn` can also build a true/false flag.
 
 # COMMAND ----------
 
@@ -248,9 +233,15 @@ df.withColumn("is_long_trip", F.col("trip_distance_miles") > 15).select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC When the column name already exists, `withColumn` **replaces** values from
-# MAGIC the expression. Here, `Shared` becomes `Pool`; other service types stay the
-# MAGIC same. The original `df` is still unchanged.
+# MAGIC ## Recalculate existing column values with `withColumn` to prevent duplicate column names.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### withColumn
+# MAGIC
+# MAGIC Name already exists → recalculate that column. `Shared` becomes `Pool`.
+# MAGIC One `service_type`. Other columns stay.
 
 # COMMAND ----------
 
@@ -263,52 +254,38 @@ df.withColumn("service_type", service_type_expr).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Recalculating with `select` can duplicate column names
+# MAGIC ### select
 # MAGIC
-# MAGIC `withColumn` replaces a column by name. **`select("*", expr.alias("service_type"))`**
-# MAGIC instead keeps the original **and** adds a second `service_type` — later
-# MAGIC references become ambiguous. With `select`, list every column you want and
-# MAGIC put the recalculated expression in the correct position.
+# MAGIC `select("*", expr.alias("service_type"))` keeps the original and adds a second
+# MAGIC `service_type`. Look for two columns with that name.
 
 # COMMAND ----------
 
-df.select("*", service_type_expr.alias("service_type")).printSchema()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC > **Good to know:** `select` and `withColumn` both accept Column
-# MAGIC > expressions and return a new DataFrame. Use `withColumn` when you mean
-# MAGIC > to replace an existing column by name; use `select` when you are
-# MAGIC > projecting the full output shape explicitly.
+df.select("*", service_type_expr.alias("service_type")).show()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Several columns at once: `withColumns`
 # MAGIC
-# MAGIC Prefer **`withColumns({name: expr, ...})`** when you add several derived
-# MAGIC columns in one step. Each separate `withColumn` call adds another
-# MAGIC projection to the logical plan; repeating that many times (especially in
-# MAGIC a loop) can bloat the plan.
+# MAGIC Add several columns in one step.
 
 # COMMAND ----------
 
 df.withColumns(
     {
         "trip_distance_km": km_expr,
-        "is_long_trip": F.col("trip_distance_miles") > 15,
+        "is_long_trip": distance_band_expr,
+        "service_type": service_type_expr
     }
-).select("trip_id", "trip_distance_km", "is_long_trip").show()
+).select("trip_id", "trip_distance_km", "is_long_trip","service_type").show()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Rename columns
 # MAGIC
-# MAGIC **`.alias()`** renames inside a `select`. To rename while keeping all other
-# MAGIC columns, use **`withColumnRenamed(old, new)`** or rename several at once
-# MAGIC with **`withColumnsRenamed({old: new, ...})`**.
+# MAGIC `withColumnRenamed` / `withColumnsRenamed` keep the other columns.
 
 # COMMAND ----------
 
@@ -326,26 +303,23 @@ df.withColumnsRenamed(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Gotcha:** `withColumnRenamed` is a silent no-op when the old name does not
-# MAGIC match a real column. A typo means the rename never happened — check
-# MAGIC `printSchema()` when output columns look wrong.
-
-# COMMAND ----------
-
-typo_rename = df.withColumnRenamed("ride_duration_min", "duration_mins")
-print("columns after typo rename:", typo_rename.columns)
-print("unchanged from original? ", typo_rename.columns == df.columns)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Remove columns with `drop`
 # MAGIC
-# MAGIC **`drop`** returns a new DataFrame without the named columns. In production,
-# MAGIC drop temporary or internal columns before writing so consumers do not
-# MAGIC inherit fields meant only for intermediate checks.
-# MAGIC
-# MAGIC If a column name is missing, `drop` does not raise an error.
+# MAGIC Missing names do not raise an error.
+
+# COMMAND ----------
+
+df_km = df.withColumns(
+    {
+        "trip_distance_km": km_expr,
+        "is_long_trip": distance_band_expr,
+        "service_type": service_type_expr
+    }
+)
+
+# COMMAND ----------
+
+df_km.show()
 
 # COMMAND ----------
 
@@ -354,20 +328,9 @@ df_km.drop("trip_distance_miles", "pickup_location_id").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Chain transforms into an operations-style output
+# MAGIC ## Chain transforms into one output
 # MAGIC
-# MAGIC **Business question:** A mobile-app dashboard needs trip data prepared
-# MAGIC with:
-# MAGIC
-# MAGIC - trip IDs as text
-# MAGIC - standardized service names (`Shared` → `Pool`)
-# MAGIC - kilometre distances and distance bands
-# MAGIC - a source tag
-# MAGIC - only the columns the dashboard reads
-# MAGIC
-# MAGIC Chain `select`, `withColumns`, `withColumn`, rename, and `drop` into one
-# MAGIC readable pipeline. Reuse the expressions defined earlier so the rules
-# MAGIC stay consistent.
+# MAGIC Reuse `km_expr`, `distance_band_expr`, and `service_type_expr`.
 
 # COMMAND ----------
 
@@ -396,8 +359,7 @@ operations_dashboard.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Confirm the source DataFrame is unchanged — the chain above built a new
-# MAGIC output shape without mutating `df`.
+# MAGIC Confirm `df` is unchanged.
 
 # COMMAND ----------
 
@@ -409,22 +371,8 @@ print("original df columns:         ", df.columns)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC Recap this notebook's reshape path:
+# MAGIC - `select` projects and reorders. `F.col` builds expressions.
+# MAGIC - `withColumn` / `withColumns` add or recalculate. Rename and `drop` shape output.
+# MAGIC - Chain into one new DataFrame. Source `df` stays unchanged.
 # MAGIC
-# MAGIC - **`select`** — project, reorder; returns a new DataFrame; does not
-# MAGIC   mutate the input
-# MAGIC - **Column-name strings vs `F.col`** — strings for unchanged columns;
-# MAGIC   `F.col` for expressions (`alias`, arithmetic, light `cast`, `F.lit`,
-# MAGIC   `F.when`)
-# MAGIC - **`select` vs `withColumn`** — either can add a column; `withColumn`
-# MAGIC   replaces by name when recalculating
-# MAGIC - **`withColumn` / `withColumns`** — add or recalculate columns; prefer
-# MAGIC   `withColumns` for several additions at once
-# MAGIC - **`withColumnRenamed` / `withColumnsRenamed`** — rename without listing
-# MAGIC   every column in `select`
-# MAGIC - **`drop`** — remove columns from the output shape
-# MAGIC - **Chain transforms** — reuse named expressions; build a clear
-# MAGIC   downstream-ready DataFrame
-# MAGIC
-# MAGIC Next up: `04 - SQL Expressions in DataFrame Code` — write the same kind of
-# MAGIC column logic as SQL expression strings (`F.expr`, `selectExpr`).
+# MAGIC Next up: `04 - SQL Expressions in DataFrame Code`.

@@ -23,11 +23,13 @@ By the end of this module, you'll be able to:
 - Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
   `F.when` / `otherwise`
 - Express the same logic as SQL strings with `F.expr` and `selectExpr`
-  (including `CASE WHEN`) and choose the clearer form
+  (including `CASE WHEN`) and reuse named SQL strings
 - Filter with `filter` / `where` (Column ops and SQL strings); intro NULL
   checks (`isNull` / `isNotNull`); empty string ≠ NULL
 - Register a session temporary view with `createOrReplaceTempView`; query with
-  `%sql` and `spark.sql`; recognize global temporary views on classic compute
+  `%sql` and `spark.sql`
+- Register a global temporary view with `createOrReplaceGlobalTempView` and
+  query `global_temp` on classic compute
 - Prefer clear chained transforms that leave the original frame unchanged
   until you assign a new one
 
@@ -37,6 +39,10 @@ Module 1 — Azure Databricks and Spark Foundations. You should already attach
 compute, use notebook cells, and create a small DataFrame with
 `spark.createDataFrame(rows, columns)` plus basic `show` / `display` /
 `printSchema`.
+
+Read the matching page in the course Notion hub before notebooks **01–05**.
+Notebook **06** global temporary views require classic all-purpose compute —
+not serverless.
 
 ## Dataset
 
@@ -48,20 +54,21 @@ file reading starts in Module 5.
 
 ### Context
 
-What a DataFrame is, and four ways to create one from Python rows.
+Lab after the **Creating DataFrames** Notion page. Four ways to create a
+DataFrame from Python rows.
 
 ### Learning objectives
 
-- Explain what a Spark DataFrame is
 - Create DataFrames unnamed/inferred, named/inferred, named with DDL, and
   named with `StructType`
 - Inspect each path and explain inferred vs production risk
 
 ### Lesson flow
 
-What a DataFrame is; create without columns/schema (`_1`, `_2`, …); named +
-inferred; DDL; `StructType`; inspect each path; inferred vs production risk;
-keep examples tiny (2–3 rows).
+Create without columns/schema (`_1`, `_2`, …); named + inferred (compare
+types with the RideEase model on Notion); DDL (`int` / `decimal(8,2)` vs
+inferred `long` / `double`); `StructType` (same contract as DDL); inspect
+each path.
 
 ### Expected state
 
@@ -75,7 +82,8 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Inspect beyond a first look: contents, structure, size, and summary stats.
+Lab after the **Inspecting DataFrames** Notion page. Inspect beyond a first
+look: contents, structure, size, and summary stats.
 
 ### Learning objectives
 
@@ -86,10 +94,11 @@ Inspect beyond a first look: contents, structure, size, and summary stats.
 
 ### Lesson flow
 
-Contents: `show` options (`n`, `truncate`, `vertical`) / `display`;
-structure: `printSchema`, `schema`, `columns`, `dtypes`; size: `count`,
-`isEmpty`; `describe` / `summary`; metadata checks vs methods that run Spark
-work.
+One intentionally bad trip (negative `trip_distance_miles`, huge
+`ride_duration_mins`); contents: `show` options (`n`, `truncate`,
+`vertical`) / `display`; structure: `printSchema`, `schema`, `columns`,
+`dtypes` (metadata — no Spark job); size: `count`, `isEmpty`; a filter can
+make a DataFrame empty; `describe` / `summary`.
 
 ### Expected state
 
@@ -103,22 +112,26 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Reshape columns with the DataFrame API — the transforms later notebooks
-reuse.
+Lab after the **Selecting and Transforming Columns** Notion page. Reshape
+columns with the DataFrame API — the transforms later notebooks reuse.
 
 ### Learning objectives
 
 - Select, add, rename, recalculate, and drop columns
+- Transforms return a new DataFrame
 - Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
   `F.when` / `otherwise`
 - Choose `select` vs `withColumn` and chain into a small ops-style output
 
 ### Lesson flow
 
-`select` / immutability; name strings vs `F.col`; `alias`, arithmetic, light
-`cast`, `F.lit`; `F.when` / `otherwise`; `withColumn` / `withColumns`;
-`withColumnRenamed` / `withColumnsRenamed` / `drop`; when to use `select` vs
-`withColumn`; chain into a small ops-style output.
+`select` / reorder; `select` returns a new DataFrame (`df` unchanged); name
+strings vs `F.col`; `alias`, arithmetic, light `cast`, `F.lit`; `F.when` /
+`otherwise`; add with `withColumn` vs `select`; recalculate with
+`withColumn` vs `select("*", expr.alias(existing_name))` (duplicate column
+names); `withColumns`; `withColumnRenamed` / `withColumnsRenamed` / `drop`
+(missing names do not error); chain into a small ops-style output; source
+`df` unchanged.
 
 ### Expected state
 
@@ -132,24 +145,28 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Express the same column logic as SQL strings inside DataFrame code.
+Lab after the **SQL Expressions in DataFrame Code** Notion page. Express the
+same column logic as SQL strings inside DataFrame code.
 
 ### Learning objectives
 
 - Use `F.expr` and `selectExpr`, including SQL `CASE WHEN`
-- Recognize misspelled-column `AnalysisException` across styles
-- Distinguish Python `SyntaxError` from Spark SQL parse errors and choose
-  a consistent style
+- Reuse named SQL strings
 
 ### Lesson flow
 
-`F.expr`; `selectExpr`; SQL `CASE WHEN`; misspelled columns
-(`AnalysisException`) across styles; Python `SyntaxError` vs Spark SQL parse
-errors; choose and reuse related rules consistently.
+`F.expr` (SQL string → Column; reuse `mph_sql`); `selectExpr` (SQL strings
+→ new DataFrame; pass `mph_sql` with no `F.expr`); SQL `CASE WHEN` via
+`F.expr` and `selectExpr`; `selectExpr` ops-style output; source `df`
+unchanged.
 
 ### Expected state
 
 Not applicable — no persistent data state.
+
+### Boundaries
+
+`%sql` / `spark.sql` (notebook 06).
 
 ### Next
 
@@ -159,7 +176,8 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Keep rows with `filter` / `where`, including intro NULL and blank traps.
+Lab after the **Filtering Rows** Notion page. Keep rows with `filter` /
+`where`, including intro NULL and blank traps.
 
 ### Learning objectives
 
@@ -169,9 +187,11 @@ Keep rows with `filter` / `where`, including intro NULL and blank traps.
 
 ### Lesson flow
 
-`filter` / `where`; combine with SQL `AND` vs Column `&` (parens); why Python
-`and` fails; `|`, `~`, `isin`, `between`, `like`; intro NULL (`isNull` /
-`isNotNull`; `== None` fails); empty string ≠ NULL; deeper NULL → Module 3.
+Sample includes NULL, empty-string, and negative-distance rows; `filter` /
+`where`; combine with SQL `AND` vs Column `&` (parens); Python `and` /
+`or` / `not` fail on Columns; `|`, `~`, `isin`, `between`, `like`; intro
+NULL (`== None` and `!= None` vs `isNull` / `isNotNull`); empty string ≠
+NULL; chain a usable-trip filter into one output; source `df` unchanged.
 
 ### Expected state
 
@@ -185,25 +205,36 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Query a DataFrame through temp views and Spark SQL — including when
-side-by-side APIs are the learning objective.
+Query a DataFrame through a session temporary view and Spark SQL, then a
+classic-only global temporary view.
 
 ### Learning objectives
 
-- Express the same calculated column via `F.when`, `F.expr`, and `selectExpr`
-- Register a session temporary view; query with `%sql` and `spark.sql`
-- Recognize global temporary views on classic compute (not serverless)
+- Explain why `%sql` and `spark.sql` cannot see a Python DataFrame variable
+- Register a session temporary view with `createOrReplaceTempView`
+- Query that view with `%sql` and with `spark.sql`
+- Register a global temporary view with `createOrReplaceGlobalTempView` and
+  query `global_temp` on classic compute
 
 ### Lesson flow
 
-Same calculated column via `F.when`, `F.expr`, `selectExpr`; why `%sql`
-cannot see a Python variable; session temp views (`createOrReplaceTempView`);
-`%sql` and `spark.sql`; global temp views (`global_temp`) — classic only /
-not serverless; session vs global vs persisted table.
+Why `%sql` / `spark.sql` cannot see a Python variable (`SELECT … FROM df`
+fails); session temp views (`createOrReplaceTempView("trips")`); `%sql`;
+`spark.sql` returns a DataFrame you can keep transforming in Python;
+`createOrReplaceGlobalTempView("trips_global")`; query
+`global_temp.trips_global`; prefer session views.
 
 ### Expected state
 
 Not applicable — no persistent data state.
+
+Global temporary views require classic all-purpose compute. They are not
+supported on serverless.
+
+### Boundaries
+
+`F.when` / `F.expr` / `selectExpr` (notebooks 03–04). Side-by-side DataFrame
+remakes of the same SQL query (Module 9). Persisted tables.
 
 ### Next
 
@@ -213,5 +244,3 @@ Module 3 — Data Cleaning, NULL Semantics, and Type Handling.
 
 - Unity Catalog: none — this module does not read or write governed data
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
-- Global temporary view demo (**`06 - Querying DataFrames with SQL`**): classic
-  all-purpose compute; not available on serverless

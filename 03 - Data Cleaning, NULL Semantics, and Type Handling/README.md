@@ -42,18 +42,22 @@ file reading starts in Module 5.
 ### Context
 
 Three-valued logic and NULL-safe predicates — before messy-value cleanup.
+Classic all-purpose or serverless.
 
 ### Learning objectives
 
 - Explain three-valued logic and why filters keep only `TRUE` rows
-- Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` + NULL
-  trap, and `eqNullSafe` / `<=>`
+- Build NULL-safe predicates with `isNull` / `isNotNull`, and `eqNullSafe` /
+  `<=>`
 
 ### Lesson flow
 
-Three-valued logic as columns (`TRUE` / `FALSE` / `NULL`); filters keep only
-`TRUE`; `isNull` / `isNotNull`; `isin` + `None` trap; `eqNullSafe` / `<=>`;
-reusable eligibility / quality predicate chain.
+Card-tip reward columns (`TRUE` / `FALSE` / `NULL`); filter keeps only
+`TRUE`; `isNull` / `isNotNull` on `payment_method`; `~isin` drops `NULL`
+pickup (zones other than 74 and 231); `None` in the `isin` list empties the
+filter; `isNull() | ~isin(74, 231)` keeps missing pickup — do not put
+`None` in the list; `eqNullSafe` / `<=>`; filter `location_allowed &
+qualifies_for_reward`.
 
 ### Expected state
 

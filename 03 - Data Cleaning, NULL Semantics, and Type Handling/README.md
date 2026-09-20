@@ -71,7 +71,8 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Normalize missing shapes to real `NULL` before drop/fill.
+Normalize missing shapes to real `NULL` before drop/fill. Classic
+all-purpose or serverless.
 
 ### Learning objectives
 
@@ -81,9 +82,12 @@ Normalize missing shapes to real `NULL` before drop/fill.
 
 ### Lesson flow
 
-`NULL`, blanks, sentinels (`"N/A"`, `-1`), `NaN`; normalize before `na.drop`
-/ `na.fill`; `na.drop` (`how="any"` / `"all"`, `subset`) / `na.fill` /
-`na.replace`; `F.coalesce` (not partition coalesce).
+`NULL` vs blanks / `"N/A"` / `-1` / `NaN`; trim payment; `when` then
+`na.replace` to store sentinels, `NaN`, and empty payment as `NULL`; count
+missing payments (keep rows); `na.fill` subset then dict then by type;
+`na.drop` (`how="any"` / `"all"`, `subset`); `F.coalesce` recorded /
+backup / `"unknown"` (not partition coalesce); chain normalize, decide
+(drop wait, fill tip and payment), validate.
 
 ### Expected state
 
@@ -97,17 +101,23 @@ Not applicable — no persistent data state.
 
 ### Context
 
-`cast` vs `try_cast` under Spark 4 / ANSI, and rejected-row detection.
+`cast` fails the job on invalid text under ANSI; `try_cast` returns `NULL`
+and the job continues. Then find rejected rows. Classic all-purpose or
+serverless.
 
 ### Learning objectives
 
-- Cast with `cast` and `try_cast`
-- Detect rows rejected by a cast
+- Use `cast` and see invalid text fail the job under ANSI
+- Use `try_cast` so invalid text becomes `NULL` and the job continues
+- Find rejected rows with `source.isNotNull() & casted.isNull()`
 
 ### Lesson flow
 
-`cast` vs `try_cast` under Spark 4 / ANSI; rejected-row pattern
-(`source.isNotNull() & casted.isNull()`); unsupported type pairs.
+String `base_fare_amount` including `"N/A"` and a true `NULL`; `cast` to
+`decimal(10,2)` fails the job (`CAST_INVALID_INPUT`); `try_cast` writes
+`NULL` for invalid text; rejected rows are
+`source.isNotNull() & casted.isNull()` — an original `NULL` is not
+rejected. Do not disable ANSI.
 
 ### Expected state
 
@@ -116,6 +126,11 @@ Not applicable — no persistent data state.
 ### Next
 
 `04 - Numeric Overflow and Date-Timestamp Parsing`
+
+### Boundaries
+
+Overflow, `try_sum` / `try_avg`, and date/timestamp parsing belong in
+notebook 04. Do not teach unsupported type pairs or disable ANSI.
 
 ## Notebook 04 — Numeric Overflow and Date-Timestamp Parsing
 
@@ -132,9 +147,11 @@ helpers.
 
 ### Lesson flow
 
-Cast / arithmetic overflow; `try_sum` / `try_avg`; `to_date` /
+Integer `cast` overflow; choose a decimal that fits; `try_add` / `try_divide`
+return `NULL` on arithmetic overflow; `try_sum` / `try_avg`; `to_date` /
 `to_timestamp` with formats; session timezone (`spark.sql.session.timeZone`);
-`try_to_date` / `try_to_timestamp`; invalid source vs invalid format.
+`try_to_timestamp` / `try_to_date`; invalid source vs invalid format; chain
+parsing into a report; combine arithmetic and parsing in one review table.
 
 ### Expected state
 

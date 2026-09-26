@@ -2,21 +2,23 @@
 # MAGIC %md
 # MAGIC # 02 - Lazy Evaluation and the Query Plan
 # MAGIC
-# MAGIC Why Spark waits for an action, and how the optimizer can rewrite a plan.
+# MAGIC Spark records transformations first and executes them only when an action
+# MAGIC requests a result.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Explain lazy evaluation
-# MAGIC - Inspect logical and physical plans with `.explain()` and spot optimizer
-# MAGIC   changes
+# MAGIC - Understand lazy evaluation
+# MAGIC - Inspect a query plan with `.explain()`
+# MAGIC - See how Spark optimizes a logical plan before execution
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Set up the payments example
+# MAGIC ## Setup
 # MAGIC
-# MAGIC Build a small DataFrame with the course `payment` columns used in this
-# MAGIC notebook: `trip_id` (`bigint`), `payment_method` (`string`),
-# MAGIC `base_fare_amount` (`decimal(10,2)`), and `tip_amount` (`decimal(10,2)`).
+# MAGIC Attach classic **all-purpose** compute.
+# MAGIC
+# MAGIC This notebook uses the same trip data as `01 - Transformations vs Actions`.
 
 # COMMAND ----------
 
@@ -24,139 +26,138 @@ from decimal import Decimal
 
 from pyspark.sql import functions as F
 
-payments = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    [
-        (1001, "card", Decimal("12.50"), Decimal("0.00")),
-        (1002, "cash", Decimal("8.75"), Decimal("1.50")),
-        (1003, "card", Decimal("6.20"), Decimal("2.00")),
-        (1004, "card", Decimal("4.80"), Decimal("0.50")),
-    ],
-    """
-    trip_id bigint,
-    payment_method string,
-    base_fare_amount decimal(10,2),
-    tip_amount decimal(10,2)
-    """,
+rows = [
+    (1001, "Midtown East", Decimal("12.50")),
+    (1002, "chelsea", Decimal("8.75")),
+    (1003, "Astoria", Decimal("6.20")),
+    (1004, "SoHo", None),
+    (1005, "Williamsburg", Decimal("11.25")),
+    (1006, "midtown west", Decimal("9.10")),
+]
+
+schema_ddl = (
+    "trip_id bigint, pickup_zone string, base_fare_amount decimal(10,2)"
 )
 
-payments.show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Why Spark waits for an action
-# MAGIC
-# MAGIC **Lazy evaluation** means Spark records each transformation in a logical
-# MAGIC plan and does not process rows until an action asks for a result.
-# MAGIC
-# MAGIC **Business question:** Payments ops wants non-zero tips reviewed with a
-# MAGIC derived INR value and a simple tip band. What happens when you define that
-# MAGIC chain — and when does Spark actually run it?
-
-# COMMAND ----------
-
-review_payments = (
-    payments.withColumn(
-        "tip_inr",
-        F.round(F.col("tip_amount") * F.lit(83), 2),
-    )
-    .withColumn(
-        "tip_band",
-        F.when(F.col("tip_amount") >= F.lit(2), F.lit("high")).otherwise(F.lit("low")),
-    )
-    .select(
-        "trip_id",
-        "payment_method",
-        "base_fare_amount",
-        "tip_amount",
-        "tip_inr",
-        "tip_band",
-    )
-    .filter(F.col("tip_amount") > F.lit(0))
+trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    rows,
+    schema_ddl,
 )
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The cell finished with no printed rows. Spark has a plan for
-# MAGIC **`review_payments`**, not a computed table in memory. An action is what
-# MAGIC forces execution. **`show()`**, **`count()`**, and write/save operations
-# MAGIC are actions.
-
-# COMMAND ----------
-
-review_payments.show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Spark waits so it can see the full chain before choosing how to run it.
-# MAGIC That is why the optimizer can move the late filter earlier: the full plan
-# MAGIC is available before the action starts the job.
+# MAGIC ## Lazy evaluation
 # MAGIC
-# MAGIC > **Good to know:** After the action, open **Spark UI → Jobs** on classic
-# MAGIC > all-purpose compute. This notebook's query should appear as a job with the
-# MAGIC > optimized plan already in place.
+# MAGIC Spark uses **lazy evaluation** for DataFrame transformations.
+# MAGIC
+# MAGIC When we apply transformations, Spark records the operations in a logical
+# MAGIC plan. It does not execute the transformation chain until an action
+# MAGIC requests a result.
+# MAGIC
+# MAGIC In the previous notebook, we filtered the missing fare before converting
+# MAGIC the pickup zone to uppercase.
+# MAGIC
+# MAGIC Here, we intentionally write the operations in a different order so we
+# MAGIC can inspect what Spark does with the plan.
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Inspect the query plan with `explain(mode="extended")`
-# MAGIC
-# MAGIC **`.explain()`** prints how Spark understands a DataFrame. It does not
-# MAGIC return rows to your notebook the way **`show()`** does — it prints the
-# MAGIC plan text.
-# MAGIC
-# MAGIC **Business question:** What plan did Spark build for the payments review
-# MAGIC before any action ran?
+# Step 1: Normalize pickup zone names to uppercase
+trips_upper = trips.withColumn("pickup_zone", F.upper("pickup_zone"))
 
 # COMMAND ----------
 
-review_payments.explain(mode="extended")
+# Step 2: Remove rows where fare is missing
+trips_filter = trips_upper.filter(F.col("base_fare_amount").isNotNull())
+
+# COMMAND ----------
+
+# Step 3: Aggregate total revenue by pickup zone
+trip_summary = (
+    trips_filter.groupBy("pickup_zone")
+    .agg(F.sum("base_fare_amount").alias("total_revenue"))
+)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Read the extended output from the bottom up, you do not need every operator name yet — look for the filter, the projected columns, and the local relation that holds these hand-built rows.
+# MAGIC The transformation cells finished without producing the result.
 # MAGIC
-# MAGIC - Parsed / Analyzed plan: your written chain is still visible.
-# MAGIC - Optimized logical plan: Spark collapsed the whole chain into a LocalRelation.
-# MAGIC - Physical plan: Spark reads that as a LocalTableScan.
-# MAGIC
-# MAGIC Spark optimized plan can place the
-# MAGIC `tip_amount > 0` filter before the derived columns, so the zero-tip row
-# MAGIC does not pay for `tip_inr` or `tip_band`.
+# MAGIC Spark has built a logical plan for `trip_summary`, but has not executed
+# MAGIC it yet.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Confirm the optimized execution in Spark UI
+# MAGIC ## Inspect the query plan
 # MAGIC
-# MAGIC Open the query plan for the **`show()`** action:
+# MAGIC `.explain(mode="extended")` lets us inspect how Spark understands and
+# MAGIC prepares the DataFrame query.
 # MAGIC
-# MAGIC **Spark UI** → **SQL / DataFrame** → **Completed Queries** → select the
-# MAGIC query → **Details for Query**
+# MAGIC It does not execute the query or return the result rows.
+
+# COMMAND ----------
+
+trip_summary.explain(mode="extended")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Read the plan from the bottom up.
 # MAGIC
-# MAGIC In the plan visualization, look for the physical node that reads the final
-# MAGIC rows for this in-memory DataFrame. The row
-# MAGIC count should reflect only the non-zero-tip rows, not the full source.
+# MAGIC Focus on these three parts:
+# MAGIC
+# MAGIC - **Parsed / Analyzed Logical Plan** — shows the operations we wrote:
+# MAGIC   `upper`, then the fare filter, then the aggregation.
+# MAGIC - **Optimized Logical Plan** — Spark rewrites the logical plan before
+# MAGIC   execution. In this small in-memory example, the `Project` and `Filter`
+# MAGIC   are folded into the `LocalRelation`.
+# MAGIC - **Physical Plan** — shows how Spark plans to execute the optimized
+# MAGIC   query.
+# MAGIC
+# MAGIC Notice that the optimized relation contains only the rows needed for the
+# MAGIC query. The trip with the missing fare has already been removed before
+# MAGIC the physical `LocalTableScan`.
+# MAGIC
+# MAGIC The result has not changed. Spark changed the plan used to produce it.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Run the plan
+# MAGIC
+# MAGIC `show()` is the action that requests the result.
+
+# COMMAND ----------
+
+trip_summary.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Inspect the query in Spark UI
+# MAGIC
+# MAGIC After `show()` completes, open:
+# MAGIC
+# MAGIC **Spark UI** → **SQL / DataFrame** → **Completed Queries** → the query →
+# MAGIC **Details for Query**
+# MAGIC
+# MAGIC The Spark UI shows the physical plan used to execute the query, along
+# MAGIC with the jobs and stages created during execution.
+# MAGIC
+# MAGIC The physical plan does not have to match the order in which the Python
+# MAGIC transformations were written.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC Recap this notebook's path:
+# MAGIC - Spark lazily records DataFrame transformations in a logical plan.
+# MAGIC - An action requests the result and triggers execution.
+# MAGIC - `.explain(mode="extended")` shows the logical and physical query plans.
+# MAGIC - Spark can optimize the logical plan before execution while preserving
+# MAGIC   the same result.
 # MAGIC
-# MAGIC - **Lazy evaluation** — transformations accumulate in a logical plan;
-# MAGIC   Spark processes rows when an action runs
-# MAGIC - **Actions that trigger execution** — **`show`**, **`count`**, and write /
-# MAGIC   save operations (building a writer alone is not enough)
-# MAGIC - **`.explain(mode="extended")`** — prints the plan; compare logical and
-# MAGIC   physical stages
-# MAGIC - **Optimizer reordering** — Catalyst may move a late filter earlier while
-# MAGIC   preserving the same result
-# MAGIC - **Spark UI proof** — the job / SQL UI should show the optimized execution
-# MAGIC
-# MAGIC Next up: **Narrow vs Wide Transformations** — local work versus shuffles
-# MAGIC and **`Exchange`** in the physical plan.
+# MAGIC **Next:** `03 - Narrow vs Wide Transformations`

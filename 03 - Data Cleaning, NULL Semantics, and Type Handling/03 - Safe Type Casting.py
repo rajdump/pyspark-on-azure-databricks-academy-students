@@ -92,10 +92,9 @@ typed.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Find rejected rows
+# MAGIC ## Handle failed conversions
 # MAGIC
-# MAGIC **Business question:** Operations needs the trips whose fare could not be
-# MAGIC converted, not trips that were already missing.
+# MAGIC **Business question:** We need to identify trips where a fare value was present, but the conversion failed.
 
 # COMMAND ----------
 
@@ -108,12 +107,6 @@ rejected.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Trip `1002` had `"N/A"`. Trip `1004` was already `NULL`. Only `1002` is
-# MAGIC rejected.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC * `cast` converts valid text. Invalid text fails the job under ANSI.
@@ -122,5 +115,5 @@ rejected.show()
 # MAGIC   `NULL` is not a rejected row.
 # MAGIC
 # MAGIC **Next:** `04 - Numeric Overflow and Date-Timestamp Parsing` covers
-# MAGIC overflow and unparseable dates with `try_sum`, `try_avg`, `try_to_date`,
-# MAGIC and `try_to_timestamp`.
+# MAGIC overflow and unparseable dates with `try_add`, `try_to_date`, and
+# MAGIC `try_to_timestamp`.

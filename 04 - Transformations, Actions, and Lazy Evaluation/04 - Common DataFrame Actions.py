@@ -2,27 +2,27 @@
 # MAGIC %md
 # MAGIC # 04 - Common DataFrame Actions
 # MAGIC
-# MAGIC Return types and driver-side memory risk for common pull/check actions.
+# MAGIC Pull a few rows to the driver. Know what each action returns and what it
+# MAGIC costs.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Choose common actions (`first`, `head`, `take`, `tail`, `isEmpty`, `toPandas`)
-# MAGIC   and know their driver-side memory risks
+# MAGIC - Choose `first`, `head`, `take`, `tail`, `isEmpty`, and `toPandas`
+# MAGIC - Know which of those pull a large result onto the driver
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Set up the payments example
+# MAGIC ## Setup
 # MAGIC
-# MAGIC Build a small DataFrame with a few payment rows and different
-# MAGIC `tip_amount` values. Course `payment` columns used here: `trip_id`
-# MAGIC (`bigint`), `payment_method` (`string`), `base_fare_amount`
-# MAGIC (`decimal(10,2)`), and `tip_amount` (`decimal(10,2)`).
+# MAGIC Attach classic **all-purpose** compute
 # MAGIC
-# MAGIC Later, sort by `tip_amount` so the first and last rows are predictable.
+# MAGIC This notebook rebuilds the same trips as
+# MAGIC `01 - Transformations vs Actions`. Run this setup. Do not depend on an
+# MAGIC earlier notebook still being in the session.
 # MAGIC
-# MAGIC > **Caution:** Actions such as `collect()`, `toPandas()`, and large
-# MAGIC > `head(n)` / `take(n)` / `tail(n)` pull rows onto the **driver**. Use them
-# MAGIC > only on small, bounded results — a large pull can exhaust driver memory.
+# MAGIC > **Warning:** `collect()`, `toPandas()`, and large `head(n)` / `take(n)` /
+# MAGIC > `tail(n)` pull rows onto the **driver**. Use them only on small results.
 
 # COMMAND ----------
 
@@ -30,87 +30,66 @@ from decimal import Decimal
 
 from pyspark.sql import functions as F
 
-payments = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    [
-        (1001, "card", Decimal("12.50"), Decimal("3.50")),
-        (1002, "cash", Decimal("8.75"), Decimal("0.00")),
-        (1003, "card", Decimal("6.20"), Decimal("2.00")),
-        (1004, "cash", Decimal("9.10"), Decimal("1.25")),
-        (1005, "card", Decimal("15.00"), Decimal("4.00")),
-        (1006, "cash", Decimal("5.40"), Decimal("0.50")),
-    ],
-    """
-    trip_id bigint,
-    payment_method string,
-    base_fare_amount decimal(10,2),
-    tip_amount decimal(10,2)
-    """,
+rows = [
+    (1001, "Midtown East", Decimal("12.50")),
+    (1002, "chelsea", Decimal("8.75")),
+    (1003, "Astoria", Decimal("6.20")),
+    (1004, "SoHo", None),
+    (1005, "Williamsburg", Decimal("11.25")),
+    (1006, "midtown west", Decimal("9.10")),
+]
+
+schema_ddl = (
+    "trip_id bigint, pickup_zone string, base_fare_amount decimal(10,2)"
 )
 
-payments.show()
+trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    rows,
+    schema_ddl,
+)
+
+# COMMAND ----------
+
+trips.show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Common DataFrame actions
+# MAGIC ## Sort so first and last rows are predictable
 # MAGIC
-# MAGIC An **action** requests a result or writes the DataFrame, so Spark executes
-# MAGIC the plan.
+# MAGIC You already used `show()` and `count()`. This notebook demos the other
+# MAGIC pull/check actions. Writes wait for Module 5.
 # MAGIC
-# MAGIC | Action | Return type | Size risk |
-# MAGIC |---|---|---|
-# MAGIC | `show()` | Displays rows (returns `None`) | Low (display only) |
-# MAGIC | `count()` | `int` | Low |
-# MAGIC | `collect()` | `list` of all `Row`s | High if the Spark result is large |
-# MAGIC | `first()` | One `Row` | Low |
-# MAGIC | `head()` | One `Row` | Low |
-# MAGIC | `head(n)` / `take(n)` | `list` of `n` `Row`s | Grows with `n` |
-# MAGIC | `tail(n)` | `list` of `n` `Row`s | Grows with `n` |
-# MAGIC | `isEmpty()` | `True` or `False` | Low (no row payload) |
-# MAGIC | `toPandas()` | pandas `DataFrame` (all rows) | High if the Spark result is large |
-# MAGIC | `write.save()` / `write.saveAsTable()` | Writes output | Storage, not driver memory |
-# MAGIC
-# MAGIC You already used `show()`, `count()`, and `collect()`. This notebook demos
-# MAGIC the other pull/check actions. Writing is covered in Module 5.
-# MAGIC
-# MAGIC Prefer small `n` for `head` / `take` / `tail`. Use `collect()` and
-# MAGIC `toPandas()` only when the returned result is small.
+# MAGIC **Business question:** Operations wants the cheapest trips that have a
+# MAGIC fare. Spark DataFrames have no guaranteed order until you sort.
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Retrieve the first rows
-# MAGIC
-# MAGIC Sort by `tip_amount` ascending so the first rows are predictable. Then
-# MAGIC compare `first()`, `head()`, `head(n)`, and `take(n)`.
-# MAGIC
-# MAGIC `first()` and `head()` return one `Row`; `head(n)` and `take(n)` return a
-# MAGIC `list` of `Row`s.
+ordered = (
+    trips.filter(F.col("base_fare_amount").isNotNull())
+    .orderBy(F.col("base_fare_amount"))
+)
 
-# COMMAND ----------
-
-ordered = payments.orderBy(F.col("tip_amount"))
 ordered.show()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### `first()`
+# MAGIC Five trips. Lowest fare is trip `1003` (`6.20`). Highest is trip `1001`
+# MAGIC (`12.50`).
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## `first` and `head`
 # MAGIC
-# MAGIC Returns one `Row` — the first row after the sort.
+# MAGIC `first()` and `head()` with no argument each return one `Row`.
 
 # COMMAND ----------
 
 first_row = ordered.first()
 print("first() returned:", type(first_row).__name__)
 print(first_row)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### `head()`
-# MAGIC
-# MAGIC With no argument, `head()` also returns one `Row`.
 
 # COMMAND ----------
 
@@ -121,102 +100,96 @@ print(head_row)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### `head(n)`
+# MAGIC Both are trip `1003`.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## `head(n)` and `take(n)`
 # MAGIC
-# MAGIC Returns a Python `list` of the first `n` rows.
+# MAGIC Both return a Python `list` of the first `n` rows. Size risk grows with
+# MAGIC `n`.
 
 # COMMAND ----------
 
 head_rows = ordered.head(3)
 print("head(3) returned:", type(head_rows).__name__, "len =", len(head_rows))
-head_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### `take(n)`
-# MAGIC
-# MAGIC Returns a Python `list` of the first `n` rows (same idea as `head(n)`).
+head_rows  # noqa: B018
 
 # COMMAND ----------
 
 take_rows = ordered.take(3)
 print("take(3) returned:", type(take_rows).__name__, "len =", len(take_rows))
-take_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
+take_rows  # noqa: B018
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Retrieve the last rows with `tail()`
+# MAGIC Trips `1003`, `1002`, and `1006` — the three cheapest fares.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## `tail(n)`
 # MAGIC
-# MAGIC `tail(n)` returns the last `n` rows as a Python `list`.
-# MAGIC
-# MAGIC Spark DataFrames have no guaranteed row order unless you sort. We already
-# MAGIC sorted by `tip_amount`, so the last rows are the highest tips.
+# MAGIC `tail(n)` returns the last `n` rows as a Python `list`. Because we sorted
+# MAGIC by fare, those are the highest fares.
 
 # COMMAND ----------
 
 tail_rows = ordered.tail(3)
 print("tail(3) returned:", type(tail_rows).__name__, "len =", len(tail_rows))
-tail_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
+tail_rows  # noqa: B018
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Check whether a DataFrame is empty
+# MAGIC Trips `1006`, `1005`, and `1001`.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## `isEmpty`
 # MAGIC
 # MAGIC `isEmpty()` returns `True` or `False`. Prefer it over `count() == 0` when
-# MAGIC you only need a yes/no check — `count()` must count every row; `isEmpty()`
-# MAGIC can stop after finding one.
+# MAGIC you only need a yes/no check. `count()` walks every row.
 
 # COMMAND ----------
 
 print("ordered.isEmpty():", ordered.isEmpty())
 
-empty_df = ordered.filter(F.col("tip_amount") < F.lit(0))
-print("empty filter isEmpty():", empty_df.isEmpty())
+empty_df = ordered.filter(F.col("base_fare_amount") < F.lit(0))
+print("negative-fare isEmpty():", empty_df.isEmpty())
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Convert a small result to pandas
+# MAGIC ## `toPandas`
 # MAGIC
 # MAGIC `toPandas()` returns the complete Spark result as a pandas DataFrame on
-# MAGIC the driver.
+# MAGIC the driver. Same size risk as `collect()`. Use it only on a small,
+# MAGIC bounded result.
 # MAGIC
-# MAGIC Use it only for small, bounded DataFrames. A large result can exhaust
-# MAGIC driver memory — the same risk as `collect()`. Writing results is also an
-# MAGIC action, but `DataFrame.write` itself only returns a writer interface — a
-# MAGIC terminal method such as `.save()` or `.saveAsTable()` triggers execution.
-# MAGIC Module 5 covers it.
+# MAGIC `DataFrame.write` returns a writer. `.save()` / `.saveAsTable()` run the
+# MAGIC write. Module 5 covers that.
 
 # COMMAND ----------
 
 pdf = ordered.toPandas()
 print("toPandas() returned:", type(pdf).__name__, "shape =", pdf.shape)
-pdf  # noqa: B018 -- bare expression triggers Databricks' rich cell display
+pdf  # noqa: B018
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC Recap this notebook's path:
+# MAGIC * Sort first when `first` / `head` / `take` / `tail` must be predictable.
+# MAGIC * `first()` and `head()` return one `Row`. `head(n)`, `take(n)`, and
+# MAGIC   `tail(n)` return a `list`.
+# MAGIC * `isEmpty()` is a yes/no check. Prefer it over `count() == 0`.
+# MAGIC * `collect()` and `toPandas()` move the full result to the driver. Keep
+# MAGIC   the DataFrame small.
+# MAGIC * Writes are actions too. Module 5 covers `DataFrame.write`.
 # MAGIC
-# MAGIC - **Sort first** when you need predictable `first` / `head` / `take` /
-# MAGIC   `tail` results — DataFrames have no guaranteed order otherwise
-# MAGIC - **`first()`** and **`head()`** return one `Row`; **`head(n)`**,
-# MAGIC   **`take(n)`**, and **`tail(n)`** return a `list` — size risk grows with
-# MAGIC   `n`
-# MAGIC - **`isEmpty()`** returns `True` or `False`; prefer it over
-# MAGIC   `count() == 0` when you only need emptiness
-# MAGIC - **`collect()`** and **`toPandas()`** move the full result to the driver
-# MAGIC   — keep the DataFrame small
-# MAGIC - **Writing** is also an action, but `DataFrame.write` itself returns a
-# MAGIC   writer interface — a terminal method such as `.save()` or
-# MAGIC   `.saveAsTable()` triggers it; Module 5 covers it
-# MAGIC
-# MAGIC **Module 4 complete.**
-# MAGIC
-# MAGIC Next up: **Module 5 — Reading, Writing, and Schemas** — bring files and
-# MAGIC tables in, and use `DataFrame.write` to save results.
+# MAGIC **Next:** Module 5 — Reading, Writing, and Schemas.

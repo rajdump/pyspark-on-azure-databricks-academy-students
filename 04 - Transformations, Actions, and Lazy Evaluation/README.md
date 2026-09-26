@@ -20,6 +20,8 @@ By the end of this module, you'll be able to:
 - Differentiate **narrow** (no cross-partition move) from **wide**
   (requires a **shuffle**) transformations
 - Identify **`Exchange`** in the physical plan as a shuffle / stage boundary
+- Read **jobs**, **stages**, **tasks**, and the stage **DAG**; a failed task
+  retries from the lineage
 - Recognize common **shuffle triggers** such as `groupBy` and `orderBy`
 - Choose common actions (`first`, `head`, `take`, `tail`, `isEmpty`,
   `toPandas`) and know their driver-side memory risks
@@ -41,17 +43,21 @@ file reading starts in Module 5.
 
 ### Context
 
-Distinguish transformations from actions on chains learners already write.
+Write a zone fare list. Transformations build a plan. Actions run it. Classic
+all-purpose compute.
 
 ### Learning objectives
 
-- Distinguish transformations (new DataFrame, build logical plan) from
-  actions (execute the plan)
+- See that transformations build a plan and return new DataFrames
+- DataFrames are immutable
+- Use the `show` action to run that plan
 
 ### Lesson flow
 
-Transformations vs actions; chain before one action — example 1 (`filter`,
-`withColumn`, `select`); example 2 (`filter`, `orderBy`, `limit`, `select`).
+Hand-built `trip_id`, `pickup_zone`, `base_fare_amount` (one `NULL` fare,
+mixed-case zones); `filter` missing fare; `upper(pickup_zone)`; `groupBy` +
+`sum` as `trip_summary`; one `show()`. Immutability of `trips` is shown live
+in class.
 
 ### Expected state
 
@@ -65,18 +71,23 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Why Spark waits for an action, and how the optimizer can rewrite a plan.
+Spark records transformations first and executes them only when an action
+requests a result. Same six trips as notebook 01. Classic all-purpose
+compute. Spark UI is on this compute.
 
 ### Learning objectives
 
-- Explain lazy evaluation
-- Inspect logical and physical plans with `.explain()` and spot optimizer
-  changes
+- Understand lazy evaluation
+- Inspect a query plan with `.explain()`
+- See how Spark optimizes a logical plan before execution
 
 ### Lesson flow
 
-Why Spark waits for an action; `.explain(mode="extended")`; optimizer can
-push a late filter earlier on one narrow chain.
+Rebuild notebook 01's `trips`; same report as 01 in separate cells, with
+`upper` first and the missing-fare `filter` last, then `groupBy` + `sum`;
+logical plan built but not executed; `.explain(mode="extended")` — parsed
+order vs `Project`/`Filter` folded into `LocalRelation`; `show()` requests
+the result; Spark UI physical plan plus jobs and stages.
 
 ### Expected state
 
@@ -90,21 +101,24 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Local work versus shuffles — `Exchange` as a stage boundary.
+Filter and uppercase stay local. `groupBy` shuffles. Same six trips as
+notebook 01. Classic all-purpose compute. Spark UI is on this compute.
 
 ### Learning objectives
 
 - Differentiate narrow from wide transformations
 - Identify `Exchange` in the physical plan
-- Recognize common shuffle triggers such as `groupBy` and `orderBy`
+- Read jobs, stages, tasks, and the stage DAG
+- Explain that a failed task retries from the lineage
 
 ### Lesson flow
 
-Prefer classic all-purpose (**Dedicated**) for partition/shuffle teaching —
-Standard/serverless may collapse this sample to one partition; inspect
-partition distribution; narrow `filter` (no `Exchange`, one stage); wide
-`groupBy` + `Exchange` + Spark UI; common shuffle triggers (deep tuning →
-Module 17).
+Rebuild notebook 01's `trips`; AQE off and `shuffle.partitions = 2`; do not
+`repartition`; print `partition_id` (often one pile); narrow `filter` +
+`upper` — no `Exchange`, one stage; wide `groupBy` + `sum` — `Exchange`, two
+stages; one `show()` each (do not also `collect()`); Spark UI DAG; failed
+task retries from lineage; shuffle triggers (`groupBy` here; `orderBy` /
+`sort`). Deep tuning → Module 18.
 
 ### Expected state
 
@@ -114,23 +128,29 @@ Not applicable — no persistent data state.
 
 `04 - Common DataFrame Actions`
 
+### Boundaries
+
+Do not call `repartition` to fake input partitions. Do not crash an executor
+to demo fault tolerance.
+
 ## Notebook 04 — Common DataFrame Actions
 
 ### Context
 
-Return types and driver-side memory risk for common pull/check actions.
+Pull a few rows to the driver. Same six trips as notebook 01. Classic
+all-purpose compute.
 
 ### Learning objectives
 
-- Choose common actions (`first`, `head`, `take`, `tail`, `isEmpty`,
-  `toPandas`) and know their driver-side memory risks
+- Choose `first`, `head`, `take`, `tail`, `isEmpty`, and `toPandas`
+- Know which of those pull a large result onto the driver
 
 ### Lesson flow
 
-Return types and driver size risk (`show` / `count` / `collect` already
-known); sort then compare `first()` / `head()` / `head(n)` / `take(n)`;
-`tail(n)` (order not guaranteed unless sorted); `isEmpty()` vs `count() == 0`;
-`toPandas()` same driver risk as `collect()`; `DataFrame.write` → Module 5.
+Rebuild notebook 01's `trips`; drop missing fare and `orderBy` fare;
+`first` / `head` (trip `1003`); `head(3)` / `take(3)`; `tail(3)`; `isEmpty`
+vs an empty filter; `toPandas` same driver risk as `collect`; writes →
+Module 5.
 
 ### Expected state
 

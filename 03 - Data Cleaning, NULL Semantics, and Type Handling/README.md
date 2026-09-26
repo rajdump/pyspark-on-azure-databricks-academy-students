@@ -129,29 +129,35 @@ Not applicable — no persistent data state.
 
 ### Boundaries
 
-Overflow, `try_sum` / `try_avg`, and date/timestamp parsing belong in
-notebook 04. Do not teach unsupported type pairs or disable ANSI.
+Overflow, `try_add`, and date/timestamp parsing belong in notebook 04. Do
+not teach unsupported type pairs or disable ANSI.
 
 ## Notebook 04 — Numeric Overflow and Date-Timestamp Parsing
 
 ### Context
 
-Overflow and unparseable dates/timestamps with Spark 4 / ANSI `try_*`
-helpers.
+`+` fails the job on overflow under ANSI; `try_add` returns `NULL` and the
+job continues. `to_date` fails on invalid text; `try_to_date` /
+`try_to_timestamp` return `NULL`. Then find failed conversions. Classic
+all-purpose or serverless.
 
 ### Learning objectives
 
-- Handle numeric overflow (`try_sum` / `try_avg`)
-- Parse dates/timestamps with formats and session timezone; use
-  `try_to_date` / `try_to_timestamp`
+- Use `+` and see overflow fail the job under ANSI
+- Use `try_add` so overflow becomes `NULL` and the job continues
+- Parse dates with `try_to_date` / `try_to_timestamp` and find failed
+  conversions
 
 ### Lesson flow
 
-Integer `cast` overflow; choose a decimal that fits; `try_add` / `try_divide`
-return `NULL` on arithmetic overflow; `try_sum` / `try_avg`; `to_date` /
-`to_timestamp` with formats; session timezone (`spark.sql.session.timeZone`);
-`try_to_timestamp` / `try_to_date`; invalid source vs invalid format; chain
-parsing into a report; combine arithmetic and parsing in one review table.
+One DataFrame: `trip_id`, `ride_duration_mins`, `trip_date` text including
+`"not-a-date"` and a true `NULL`; `ride_duration_mins + ride_duration_mins`
+fails the job (`ARITHMETIC_OVERFLOW`) on the max `int`; `try_add` writes
+`NULL`; `to_date` with `yyyy-MM-dd` fails the job (`CAST_INVALID_INPUT`);
+print session timezone; `try_to_date` / `try_to_timestamp` write `NULL`
+for invalid text; failed conversions are
+`source.isNotNull() & parsed.isNull()` — an original `NULL` is not a
+failed conversion. Do not disable ANSI.
 
 ### Expected state
 
@@ -160,6 +166,11 @@ Not applicable — no persistent data state.
 ### Next
 
 Module 4 — Transformations, Actions, and Lazy Evaluation.
+
+### Boundaries
+
+Integer `cast` overflow, `try_sum` / `try_avg` / `try_divide`, and invalid
+format patterns are out of scope. Do not disable ANSI.
 
 ## Minimum privileges required
 

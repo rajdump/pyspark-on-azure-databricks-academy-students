@@ -5,9 +5,10 @@
 # MAGIC Write a zone fare list. Spark does not run it until you ask for a result.
 # MAGIC
 # MAGIC ## Learning objectives
-# MAGIC - See that transformations build a plan and return new DataFrames
-# MAGIC - DataFrames are `immutable`
-# MAGIC - Use the `show` action to run that plan
+# MAGIC - Understand how transformations define the work Spark should perform and return new DataFrames.
+# MAGIC - Understand that Spark DataFrames are immutable.
+# MAGIC - Understand how actions trigger Spark to execute the required work.
+# MAGIC - Use the show() action to request and display a result.
 
 # COMMAND ----------
 
@@ -25,7 +26,7 @@ from pyspark.sql import functions as F
 rows = [
     (1001, "Midtown East", Decimal("12.50")),
     (1002, "chelsea", Decimal("8.75")),
-    (1003, "Astoria", Decimal("6.20")),
+    (1003, "Chelsea", Decimal("6.20")),
     (1004, "SoHo", None),
     (1005, "Williamsburg", Decimal("11.25")),
     (1006, "midtown west", Decimal("9.10")),
@@ -67,13 +68,21 @@ trip_summary.show()
 
 # COMMAND ----------
 
+# The original DataFrame is unchanged.
+# This is also an action. It runs the plan for `trips`, which is just
+# the source data, so the filter and uppercase steps are not part of it.
+trips.show()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC * Transformations return a new DataFrame and extend the plan —
-# MAGIC   `filter`, `withColumn`, `groupBy`, `agg`. 
-# MAGIC * The source DataFrame does not change.
-# MAGIC * Actions run the plan — `show`.
+# MAGIC - Transformations define the work Spark should perform and return new DataFrames.
+# MAGIC - Spark DataFrames are immutable; the source DataFrame does not change.
+# MAGIC - The Driver Process uses the transformations to build the plan.
+# MAGIC - Actions request a result and trigger Spark to execute the required work.
+# MAGIC - In this lesson, we used filter, withColumn, and groupBy(...).agg(...) as transformations, and show() as the action.
 # MAGIC
 # MAGIC **Next:** `02 - Lazy Evaluation and the Query Plan` — why Spark waits, and
 # MAGIC how to inspect the plan.

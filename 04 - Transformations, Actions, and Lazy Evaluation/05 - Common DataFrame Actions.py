@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 04 - Common DataFrame Actions
+# MAGIC # 05 - Common DataFrame Actions
 # MAGIC
 # MAGIC Pull a few rows to the driver. Know what each action returns and what it
 # MAGIC costs.

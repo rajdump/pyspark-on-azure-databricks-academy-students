@@ -2,8 +2,8 @@
 # MAGIC %md
 # MAGIC # 02 - Lazy Evaluation and the Query Plan
 # MAGIC
-# MAGIC Spark records transformations first and executes them only when an action
-# MAGIC requests a result.
+# MAGIC Spark builds a logical plan from transformations and executes the
+# MAGIC required work only when an action requests a result.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -16,7 +16,8 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Attach classic **all-purpose** compute.
+# MAGIC Attach classic **all-purpose** compute and Access mode
+# MAGIC `Dedicated`
 # MAGIC
 # MAGIC This notebook uses the same trip data as `01 - Transformations vs Actions`.
 
@@ -49,17 +50,11 @@ trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # no
 # MAGIC %md
 # MAGIC ## Lazy evaluation
 # MAGIC
-# MAGIC Spark uses **lazy evaluation** for DataFrame transformations.
+# MAGIC Spark builds a logical plan from DataFrame transformations.
 # MAGIC
-# MAGIC When we apply transformations, Spark records the operations in a logical
-# MAGIC plan. It does not execute the transformation chain until an action
-# MAGIC requests a result.
+# MAGIC The transformation chain is not executed until an action requests a result.
 # MAGIC
-# MAGIC In the previous notebook, we filtered the missing fare before converting
-# MAGIC the pickup zone to uppercase.
-# MAGIC
-# MAGIC Here, we intentionally write the operations in a different order so we
-# MAGIC can inspect what Spark does with the plan.
+# MAGIC Here, we intentionally write the operations in a different order so we can inspect how Spark handles the plan.
 
 # COMMAND ----------
 
@@ -85,17 +80,12 @@ trip_summary = (
 # MAGIC The transformation cells finished without producing the result.
 # MAGIC
 # MAGIC Spark has built a logical plan for `trip_summary`, but has not executed
-# MAGIC it yet.
+# MAGIC the required work yet.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Inspect the query plan
-# MAGIC
-# MAGIC `.explain(mode="extended")` lets us inspect how Spark understands and
-# MAGIC prepares the DataFrame query.
-# MAGIC
-# MAGIC It does not execute the query or return the result rows.
 
 # COMMAND ----------
 
@@ -106,21 +96,15 @@ trip_summary.explain(mode="extended")
 # MAGIC %md
 # MAGIC Read the plan from the bottom up.
 # MAGIC
-# MAGIC Focus on these three parts:
+# MAGIC Focus on:
 # MAGIC
-# MAGIC - **Parsed / Analyzed Logical Plan** — shows the operations we wrote:
-# MAGIC   `upper`, then the fare filter, then the aggregation.
-# MAGIC - **Optimized Logical Plan** — Spark rewrites the logical plan before
-# MAGIC   execution. In this small in-memory example, the `Project` and `Filter`
-# MAGIC   are folded into the `LocalRelation`.
-# MAGIC - **Physical Plan** — shows how Spark plans to execute the optimized
-# MAGIC   query.
-# MAGIC
-# MAGIC Notice that the optimized relation contains only the rows needed for the
-# MAGIC query. The trip with the missing fare has already been removed before
-# MAGIC the physical `LocalTableScan`.
-# MAGIC
-# MAGIC The result has not changed. Spark changed the plan used to produce it.
+# MAGIC - **Parsed Logical Plan** — Spark's initial representation of the
+# MAGIC   operations
+# MAGIC - **Analyzed Logical Plan** — resolves column references, expressions,
+# MAGIC   and data types
+# MAGIC - **Optimized Logical Plan** — may rewrite the logical plan while
+# MAGIC   preserving the same result
+# MAGIC - **Physical Plan** — shows how Spark plans to execute the work
 
 # COMMAND ----------
 
@@ -142,22 +126,17 @@ trip_summary.show()
 # MAGIC
 # MAGIC **Spark UI** → **SQL / DataFrame** → **Completed Queries** → the query →
 # MAGIC **Details for Query**
-# MAGIC
-# MAGIC The Spark UI shows the physical plan used to execute the query, along
-# MAGIC with the jobs and stages created during execution.
-# MAGIC
-# MAGIC The physical plan does not have to match the order in which the Python
-# MAGIC transformations were written.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Spark lazily records DataFrame transformations in a logical plan.
+# MAGIC - Spark builds a logical plan from DataFrame transformations and delays
+# MAGIC   execution until an action requests a result.
 # MAGIC - An action requests the result and triggers execution.
 # MAGIC - `.explain(mode="extended")` shows the logical and physical query plans.
 # MAGIC - Spark can optimize the logical plan before execution while preserving
 # MAGIC   the same result.
 # MAGIC
-# MAGIC **Next:** `03 - Narrow vs Wide Transformations`
+# MAGIC **Next:** `03 - Narrow and Wide Transformations — Shuffle`

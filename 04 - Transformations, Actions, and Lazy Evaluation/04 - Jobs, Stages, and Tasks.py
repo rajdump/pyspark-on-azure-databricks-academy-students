@@ -2,13 +2,15 @@
 # MAGIC %md
 # MAGIC # 04 - Jobs, Stages, and Tasks
 # MAGIC
-# MAGIC In the previous lesson, we saw that `filter` and `upper` are narrow transformations, while `groupBy` requires a shuffle.
+# MAGIC In the previous lesson, we saw that `filter()` and `withColumn()` using
+# MAGIC `upper()` are narrow transformations in this query, while the grouped
+# MAGIC aggregation requires a shuffle.
 # MAGIC
 # MAGIC In this notebook, we will use the same transformations to see how Spark organizes execution into **Jobs, Stages, and Tasks**.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Understand how an action triggers a Spark **Job**
+# MAGIC - Understand how an action starts Spark execution
 # MAGIC - Understand how a shuffle separates execution into **Stages**
 # MAGIC - Understand how **Tasks** process partitions within each stage
 
@@ -55,7 +57,8 @@ trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # no
 # MAGIC %md
 # MAGIC ## Before the shuffle
 # MAGIC
-# MAGIC The first two transformations are `filter` and `upper`.
+# MAGIC The first two transformations are `filter()` and `withColumn()` using
+# MAGIC `upper()`.
 # MAGIC
 # MAGIC Both are narrow transformations. They process data within the existing partitions and do not require data to be redistributed across partitions.
 # MAGIC
@@ -69,9 +72,11 @@ trips_filter = trips.filter(F.col("base_fare_amount").isNotNull())
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The next transformation, `upper`, continues processing the records within the existing partitions.
+# MAGIC The next transformation uses `withColumn()` with `upper()` to continue
+# MAGIC processing the records within the existing partitions.
 # MAGIC
-# MAGIC Like `filter`, it does not require data to move between partitions.
+# MAGIC Like `filter()`, it does not require Spark to redistribute records
+# MAGIC across partitions.
 # MAGIC
 # MAGIC Spark can therefore continue this work before reaching the shuffle.
 
@@ -85,11 +90,13 @@ trips_upper = trips_filter.withColumn("pickup_zone", F.upper("pickup_zone"))
 # MAGIC %md
 # MAGIC ## Shuffle boundary
 # MAGIC
-# MAGIC After `upper`, records with the same `pickup_zone` can still exist in different partitions.
+# MAGIC After `withColumn()` using `upper()`, records with the same
+# MAGIC `pickup_zone` can still exist in different partitions.
 # MAGIC
 # MAGIC To calculate the total revenue for each pickup zone, Spark must bring records with the same key together.
 # MAGIC
-# MAGIC `groupBy` therefore requires Spark to redistribute data across partitions.
+# MAGIC The grouped aggregation in this query requires Spark to redistribute
+# MAGIC data across partitions.
 # MAGIC
 # MAGIC This redistribution is called a **shuffle**.
 # MAGIC
@@ -108,11 +115,12 @@ trip_summary = (
 # MAGIC %md
 # MAGIC ## Trigger the job
 # MAGIC
-# MAGIC So far, Spark has only built the transformations.
+# MAGIC So far, Spark has built the plan from these transformations, but has
+# MAGIC not executed the required work yet.
 # MAGIC
 # MAGIC `show()` is an **action**. When it runs, Spark starts executing the query to produce the requested result.
 # MAGIC
-# MAGIC This execution is organized as a **Jobs, Stages, and Tasks**.
+# MAGIC Spark organizes the execution into Jobs, Stages, and Tasks.
 
 # COMMAND ----------
 
@@ -139,10 +147,6 @@ trip_summary.show()
 # MAGIC A task processes one partition for that stage.
 # MAGIC
 # MAGIC Because different partitions can be processed independently, multiple tasks can run in parallel.
-# MAGIC
-# MAGIC So the execution hierarchy is:
-# MAGIC
-# MAGIC **Job → Stages → Tasks**
 
 # COMMAND ----------
 
@@ -151,12 +155,9 @@ trip_summary.show()
 # MAGIC
 # MAGIC In this notebook, we learned how Spark organizes execution into Jobs, Stages, and Tasks.
 # MAGIC
-# MAGIC - An **action** such as `show()` triggers a **Job**.
+# MAGIC - An **action** such as `show()` starts Spark execution.
 # MAGIC - Narrow transformations can continue without requiring a shuffle.
 # MAGIC - A **shuffle** creates a boundary between **Stages**.
 # MAGIC - Each stage contains **Tasks** that process its partitions.
-# MAGIC - A Spark execution can therefore be understood as:
-# MAGIC
-# MAGIC   **Job → Stages → Tasks**
 # MAGIC
 # MAGIC **Next:** `05 - Common DataFrame Actions`

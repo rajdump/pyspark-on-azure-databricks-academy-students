@@ -2,7 +2,8 @@
 # MAGIC %md
 # MAGIC # 03 - Narrow and Wide Transformations — Shuffle
 # MAGIC
-# MAGIC `filter` and `upper` process data within the **existing partitions**. `groupBy` requires a **shuffle**.
+# MAGIC `filter()` and `withColumn()` using `upper()` process data within the
+# MAGIC existing partitions. The grouped aggregation requires a shuffle.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -73,7 +74,7 @@ trips.select(
 # MAGIC
 # MAGIC Each task processes its input partition by applying this filter condition.
 # MAGIC
-# MAGIC This filter is a narrow transformation because each task can process its partition independently, without moving data to another partition.
+# MAGIC This filter is a narrow transformation because each task can process its partition independently, without Spark redistributing records across partitions.
 
 # COMMAND ----------
 
@@ -89,9 +90,12 @@ trips_filter.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The next transformation `upper` continues processing the data within the same partitions.
+# MAGIC The next transformation uses `withColumn()` with `upper()` to normalize
+# MAGIC `pickup_zone` while continuing to process the data within the same
+# MAGIC partitions.
 # MAGIC
-# MAGIC Both transformations process records within the existing partitions and neither requires data to move between partitions.
+# MAGIC Both transformations process records within the existing partitions and
+# MAGIC do not require Spark to redistribute records across partitions.
 
 # COMMAND ----------
 
@@ -112,9 +116,11 @@ trips_upper.select(
 # MAGIC
 # MAGIC At this point, records for the same pickup zone may exist in different partitions.
 # MAGIC
-# MAGIC To calculate revenue for each pickup zone, Spark must bring records with the same key together
+# MAGIC To calculate total revenue for each pickup zone, Spark must bring
+# MAGIC matching `pickup_zone` values together.
 # MAGIC
-# MAGIC This process requires data movement between partitions. This data movement across the cluster is called a shuffle.
+# MAGIC This requires Spark to redistribute data across partitions. This
+# MAGIC redistribution is called a shuffle.
 
 # COMMAND ----------
 
@@ -134,13 +140,41 @@ trip_summary.select(
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Connect this to the Physical Plan
+
+# COMMAND ----------
+
+trip_summary.explain()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Look for these operators:
+# MAGIC
+# MAGIC - **`HashAggregate`** — performs partial aggregation before the shuffle
+# MAGIC - **`Exchange`** — redistributes data by `pickup_zone`; this is the
+# MAGIC   shuffle
+# MAGIC - **`HashAggregate`** — performs the final aggregation after the shuffle
+# MAGIC
+# MAGIC This lab sets `spark.sql.shuffle.partitions` to `2` so the shuffle is
+# MAGIC easy to follow. In other workloads, the number of shuffle partitions can
+# MAGIC be different.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC In this notebook, we learned how transformations affect Spark partitions.
 # MAGIC
 # MAGIC - Spark divides input data into **partitions**, and each partition can be processed by a **task**.
-# MAGIC - **Narrow transformations** such as `filter` and `upper` process data within the existing partitions without moving data between partitions.
-# MAGIC - **Wide transformations** such as `groupBy` require related records from different partitions to be brought together.
+# MAGIC - **Narrow transformations** such as `filter()` and `withColumn()` using
+# MAGIC   `upper()` process data within the existing partitions without
+# MAGIC   redistributing records across partitions.
+# MAGIC - The grouped aggregation is wide because Spark must bring matching keys
+# MAGIC   together across partitions.
 # MAGIC - This redistribution of data across partitions is called a shuffle.
+# MAGIC - For this grouped sum, Spark performs partial aggregation before the
+# MAGIC   shuffle and final aggregation after the shuffle.
 # MAGIC
 # MAGIC **Next:** `04 - Jobs, Stages, and Tasks`.

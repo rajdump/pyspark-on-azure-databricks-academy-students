@@ -25,13 +25,17 @@
 
 from pyspark.sql import functions as F
 
+# Reading path
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 trip_time_parquet_path = f"{landing_root}/trip_time/trip_time.parquet"
-practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 
+# Writing path
+practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 save_modes_path = f"{practice_root}/write_modes_demo/"
 partitioned_path = f"{practice_root}/trip_time_partitioned/"
 delta_file_path = f"{practice_root}/trip_time_delta_file/"
+
+# Managed table
 managed_table = "rideshare_dev.processed.trip_time_preview"
 
 print(f"trip_time_parquet_path = {trip_time_parquet_path}")

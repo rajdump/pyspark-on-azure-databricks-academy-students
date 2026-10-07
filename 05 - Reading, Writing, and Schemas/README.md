@@ -28,10 +28,10 @@ By the end of this module, you'll be able to:
 
 ## Prerequisites
 
-Module 4 — Transformations, Actions, and Lazy Evaluation. Understand
-transformations vs actions, lazy evaluation, and that **`DataFrame.write`**
-returns a writer; execution happens on terminal methods such as **`.save()`**,
-**`.parquet()`**, or **`.saveAsTable()`**.
+Module 4 — Transformations, Actions, and Lazy Evaluation. This module
+introduces **`DataFrame.write`**: it returns a writer; execution happens on
+terminal methods such as **`.save()`**, **`.parquet()`**, or
+**`.saveAsTable()`**.
 
 Each student uses **their own** Azure storage account and Databricks
 workspace. `01 - Unity Catalog Volumes and Data Landing.py` creates the

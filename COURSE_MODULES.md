@@ -9,13 +9,11 @@ design lives in a module's `README.md` when present; see the status legend.
 
 ## Status legend
 
-
 | Status      | Meaning                                                                                 |
 | ----------- | --------------------------------------------------------------------------------------- |
 | Not Started | Roadmap/design stage — a module `README.md` may exist, but no learner notebooks         |
 | Started     | The module `README.md` design is complete and learner-notebook authoring is active      |
 | Complete    | Notebooks written, authoring-quality checked, and runtime-validated in Azure Databricks |
-
 
 Prerequisites list direct dependencies. The course learning path is
 cumulative unless stated otherwise.
@@ -28,8 +26,6 @@ cumulative unless stated otherwise.
 - [Phase IV — Reliable Batch Pipelines](#phase-iv--reliable-batch-pipelines-modules-1516)
 - [Phase V — Quality, Delivery, and Operations](#phase-v--quality-delivery-and-operations-modules-1721)
 
-
-
 ## The running use case
 
 Every module threads through the same small rideshare dataset, so each topic
@@ -39,29 +35,22 @@ schema, join keys, and physical layout:
 
 ---
 
-
-
 ## Phase I — Language and Engine Foundations (Modules 1–4)
 
 Learn the Databricks environment, build DataFrame fluency, handle imperfect
 data, and understand Spark execution.
-
 
 | #   | Module                                           | Purpose                                                                                                                                              | Major Topics                                                                                                                                                                                                                                                                            | Prerequisites                                                                                 | Production Relevance                                                   | Final-Project Contribution                                                           | Status   |
 | --- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------- |
 | 1   | Azure Databricks and Spark Foundations           | Build a mental model of how Spark executes code, then work in the Databricks notebook — before real data-engineering logic                         | Spark architecture (driver/executor; Notion 10–11); notebooks, magics, `dbutils` (Notion 12 + lab); `SparkSession` and first DataFrame (Notion 13 + lab)                                                                                                                                   | None — assumes root [README.md](README.md#who-this-is-for) baseline (basic Python, basic SQL) | Compute and platform literacy every later module depends on            | Establishes the environment the final project runs in                                | Complete |
 | 2   | DataFrame Fundamentals                           | Build core DataFrame fluency: create, inspect, reshape, express, filter, and query through temp views and Spark SQL                                  | Creating/inspecting DataFrames (theory on Notion; labs); `select`/`withColumn`/`withColumns`/rename/`drop`; `F.col`/`F.when`/`F.lit`; `F.expr`/`selectExpr`; `filter`/`where`; intro NULL/blank traps; session and global temp views (global: classic only); `%sql`/`spark.sql`             | Module 1                                                                                      | Core API fluency used in every notebook                                | Forms the DataFrame layer reused throughout                                          | Complete |
 | 3   | Data Cleaning, NULL Semantics, and Type Handling | Fix imperfect values and write NULL-aware predicates on hand-built rideshare DataFrames — before file-based ingestion                                | Three-valued logic and NULL-safe predicates (`isin` trap, `eqNullSafe`); missing/blank/sentinel/`NaN` and normalize-first; `na.drop`/`fill`/`replace` and `F.coalesce`; `cast`/`try_cast` and rejected-row detection; numeric overflow; date/timestamp parsing (Spark 4 / ANSI `try_*`) | Module 2                                                                                      | Correctness in filters, comparisons, and in-memory cleaning transforms | Reusable NULL-safe predicates and cleaning patterns for later joins and aggregations | Complete |
-| 4   | Transformations, Actions, and Lazy Evaluation    | Understand Spark's lazy execution model on chains learners already write — plans run on actions; the optimizer can rewrite; narrow vs wide (shuffle) | Transformations vs actions; lazy evaluation and the query plan; narrow vs wide / `Exchange`; common actions and driver-memory risk                                                                                                                                                      | Modules 2–3                                                                                   | Builds performance-aware coding habits early                           | Shapes how pipeline logic is written efficiently                                     | Complete |
-
-
-
+| 4   | Transformations, Actions, and Lazy Evaluation    | Understand Spark's lazy execution model on chains learners already write — plans run on actions; the optimizer can rewrite; narrow vs wide (shuffle) | Transformations vs actions; lazy evaluation and the query plan; narrow vs wide / shuffle / `Exchange`; jobs, stages, and tasks; common DataFrame actions and Driver-memory risk | Modules 2–3                                                                                   | Builds performance-aware coding habits early                           | Shapes how pipeline logic is written efficiently                                     | Complete |
 
 ## Phase II — Core Data Engineering Skills (Modules 5–9)
 
 Land files, transform data, build analytical tables and KPIs, and re-express
 the pipeline in Spark SQL.
-
 
 | #   | Module                                                  | Purpose                                                                                                                     | Major Topics                                                                                                                                                                                                                                                 | Prerequisites                                                                                                                                | Production Relevance                                       | Final-Project Contribution                                                                                    | Status   |
 | --- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------- |
@@ -71,15 +60,11 @@ the pipeline in Spark SQL.
 | 8   | Aggregations and Window Functions                       | Produce analytics-ready summaries and KPI tables                                                                            | `groupBy` and aggregates (collections, percentiles, distinct counts); pivot; window functions (ranking, running totals, lag/lead); Top-N per group; sampling; managed Delta `kpi_*` tables (`saveAsTable`)                                                   | Module 7                                                                                                                                     | Analytics and reporting layers                             | Produces teaching KPI tables later rebuilt as Gold                                                            | Complete |
 | 9   | Spark SQL and DataFrame Interoperability                | Re-express DataFrame-based rideshare analytics in Spark SQL and choose deliberate SQL–DataFrame interoperability patterns   | Dual-API entry points; SQL joins and aggregations; `PIVOT`, `UNPIVOT`, and `TABLESAMPLE`; windows and `QUALIFY`; CTEs and named parameters; rebuilds Module 8 KPI outputs in Spark SQL from Module 7 managed tables                                          | Module 8                                                                                                                                     | Supports SQL-first collaboration and dual-API validation   | Enables SQL-based transforms and cross-API validation                                                         | Complete |
 
-
-
-
 ## Phase III — Lakehouse Design and Implementation (Modules 10–14)
 
 Build Delta Lake foundations, then table maintenance, schema, and
 introductory `MERGE`; govern existing assets; design the medallion
 architecture; and build its full-refresh implementation.
-
 
 | #   | Module                                           | Purpose                                                                                                                                                 | Major Topics                                                                                                                                                                                                                                                                                                                                                                               | Prerequisites | Production Relevance                                                                              | Final-Project Contribution                                                                  | Status      |
 | --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------- |
@@ -89,27 +74,19 @@ architecture; and build its full-refresh implementation.
 | 13  | Medallion Architecture and Layer Design          | Paper-design the medallion architecture without creating lakehouse objects                                                                              | Layer rules and quality boundaries; schema names; new medallion landing location; source-to-target mapping; no `CREATE SCHEMA` and no tables; Module 5 `landing` / `processed` objects are not medallion layers                                                                                                                                                                            | Module 12     | The standard lakehouse architecture pattern                                                       | Documents the project's medallion design                                                    | Not Started |
 | 14  | Build the Full-Refresh Medallion Pipeline        | Create `rideshare_dev.bronze`, `.silver`, and `.gold` and land a fresh copy of the raw files                                                            | New medallion landing volume; copy repo `data/raw` there; first grants on the new schemas; full-refresh managed Delta tables; introduce `src/`; do not use Module 5 `landing` / `processed` objects, curated folders, or teaching tables                                                                                                                                                   | Module 13     | First production-shaped lakehouse implementation                                                  | Creates the production medallion and reusable package                                       | Not Started |
 
-
-
-
 ## Phase IV — Reliable Batch Pipelines (Modules 15–16)
 
 Make the medallion pipeline incremental and reliable, then express it as a
 required batch Lakeflow Pipeline.
-
 
 | #   | Module                                              | Purpose                                                                      | Major Topics                                                                                                                                                              | Prerequisites | Production Relevance                              | Final-Project Contribution                           | Status      |
 | --- | --------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ---------------------------------------------------- | ----------- |
 | 15  | Reliable Batch Ingestion and Incremental Processing | Make the Module 14 pipeline incremental and resilient                        | Production `MERGE`; `COPY INTO`; `REPLACE WHERE` / `INSERT REPLACE`; Change Data Feed; idempotency; deduplication; late-arriving data; backfills; batch state; quarantine | Module 14     | Ingestion reliability — a core production concern | Implements the project's incremental load logic      | Not Started |
 | 16  | Lakeflow Declarative Pipelines for Batch            | Re-express the required Bronze→Silver→Gold flow as a batch Lakeflow Pipeline | Lakeflow Pipelines on pipeline-managed compute; materialized views (batch only); no streaming or Auto Loader                                                              | Module 15     | A managed orchestration path for batch workloads  | Required declarative pipeline variant of the project | Not Started |
 
-
-
-
 ## Phase V — Quality, Delivery, and Operations (Modules 17–21)
 
 Test, tune, deploy, operate, and integrate the complete production pipeline.
-
 
 | #   | Module                                   | Purpose                                                                      | Major Topics                                                                                                                                                                                                                                                | Prerequisites | Production Relevance                     | Final-Project Contribution                       | Status      |
 | --- | ---------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------- | ------------------------------------------------ | ----------- |

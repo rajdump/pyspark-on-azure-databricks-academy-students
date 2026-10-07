@@ -2,27 +2,17 @@
 # MAGIC %md
 # MAGIC # 05 - Common DataFrame Actions
 # MAGIC
-# MAGIC Pull a few rows to the driver. Know what each action returns and what it
-# MAGIC costs.
-# MAGIC
-# MAGIC ## Learning objectives
-# MAGIC
-# MAGIC - Choose `first`, `head`, `take`, `tail`, `isEmpty`, and `toPandas`
-# MAGIC - Know which of those pull a large result onto the driver
+# MAGIC Hands-on practice for common DataFrame actions.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Attach classic **all-purpose** compute
-# MAGIC
-# MAGIC This notebook rebuilds the same trips as
-# MAGIC `01 - Transformations vs Actions`. Run this setup. Do not depend on an
-# MAGIC earlier notebook still being in the session.
-# MAGIC
-# MAGIC > **Warning:** `collect()`, `toPandas()`, and large `head(n)` / `take(n)` /
-# MAGIC > `tail(n)` pull rows onto the **driver**. Use them only on small results.
+# MAGIC Attach classic **all-purpose** compute.
+# MAGIC > **Warning:** `collect()`, `toPandas()`, and large values of `head(n)`,
+# MAGIC > `take(n)`, or `tail(n)` can bring many rows to the Driver. Use them
+# MAGIC > only when the result is small enough for Driver memory.
 
 # COMMAND ----------
 
@@ -50,146 +40,120 @@ trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # no
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## `show()` and `count()`
+# MAGIC
+# MAGIC Display rows and return the row count.
+
+# COMMAND ----------
+
 trips.show()
+print("count():", trips.count())
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Sort so first and last rows are predictable
+# MAGIC ## `first()` and `head()`
 # MAGIC
-# MAGIC You already used `show()` and `count()`. This notebook demos the other
-# MAGIC pull/check actions. Writes wait for Module 5.
-# MAGIC
-# MAGIC **Business question:** Operations wants the cheapest trips that have a
-# MAGIC fare. Spark DataFrames have no guaranteed order until you sort.
+# MAGIC Both return a single row.
 
 # COMMAND ----------
 
-ordered = (
-    trips.filter(F.col("base_fare_amount").isNotNull())
-    .orderBy(F.col("base_fare_amount"))
-)
-
-ordered.show()
+first_row = trips.first()
+first_row
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC Five trips. Lowest fare is trip `1003` (`6.20`). Highest is trip `1001`
-# MAGIC (`12.50`).
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## `first` and `head`
-# MAGIC
-# MAGIC `first()` and `head()` with no argument each return one `Row`.
-
-# COMMAND ----------
-
-first_row = ordered.first()
-print("first() returned:", type(first_row).__name__)
-print(first_row)
-
-# COMMAND ----------
-
-head_row = ordered.head()
-print("head() returned:", type(head_row).__name__)
-print(head_row)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Both are trip `1003`.
+head_row = trips.head()
+head_row
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## `head(n)` and `take(n)`
 # MAGIC
-# MAGIC Both return a Python `list` of the first `n` rows. Size risk grows with
-# MAGIC `n`.
+# MAGIC Both return up to `n` rows.
 
 # COMMAND ----------
 
-head_rows = ordered.head(3)
-print("head(3) returned:", type(head_rows).__name__, "len =", len(head_rows))
-head_rows  # noqa: B018
+head_rows = trips.head(3)
+head_rows
 
 # COMMAND ----------
 
-take_rows = ordered.take(3)
-print("take(3) returned:", type(take_rows).__name__, "len =", len(take_rows))
-take_rows  # noqa: B018
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Trips `1003`, `1002`, and `1006` — the three cheapest fares.
+take_rows = trips.take(3)
+take_rows
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## `tail(n)`
 # MAGIC
-# MAGIC `tail(n)` returns the last `n` rows as a Python `list`. Because we sorted
-# MAGIC by fare, those are the highest fares.
+# MAGIC Returns the last `n` rows.
 
 # COMMAND ----------
 
-tail_rows = ordered.tail(3)
-print("tail(3) returned:", type(tail_rows).__name__, "len =", len(tail_rows))
-tail_rows  # noqa: B018
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Trips `1006`, `1005`, and `1001`.
+tail_rows = trips.tail(3)
+tail_rows
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## `isEmpty`
+# MAGIC ## `isEmpty()`
 # MAGIC
-# MAGIC `isEmpty()` returns `True` or `False`. Prefer it over `count() == 0` when
-# MAGIC you only need a yes/no check. `count()` walks every row.
+# MAGIC Returns `True` if the DataFrame has no rows.
 
 # COMMAND ----------
 
-print("ordered.isEmpty():", ordered.isEmpty())
+print("trips.isEmpty():", trips.isEmpty())
 
-empty_df = ordered.filter(F.col("base_fare_amount") < F.lit(0))
+empty_df = trips.filter(F.col("base_fare_amount") < F.lit(0))
+
 print("negative-fare isEmpty():", empty_df.isEmpty())
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## `toPandas`
+# MAGIC ## `collect()`
 # MAGIC
-# MAGIC `toPandas()` returns the complete Spark result as a pandas DataFrame on
-# MAGIC the driver. Same size risk as `collect()`. Use it only on a small,
-# MAGIC bounded result.
-# MAGIC
-# MAGIC `DataFrame.write` returns a writer. `.save()` / `.saveAsTable()` run the
-# MAGIC write. Module 5 covers that.
+# MAGIC Returns all rows to the Driver.
 
 # COMMAND ----------
 
-pdf = ordered.toPandas()
-print("toPandas() returned:", type(pdf).__name__, "shape =", pdf.shape)
+collected_rows = trips.collect()
+
+collected_rows  # noqa: B018
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## `toPandas()`
+# MAGIC
+# MAGIC Converts the result to a pandas DataFrame on the Driver.
+
+# COMMAND ----------
+
+pdf = trips.toPandas()
 pdf  # noqa: B018
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Summary
+# MAGIC ## Reduce the result before `collect()`
 # MAGIC
-# MAGIC * Sort first when `first` / `head` / `take` / `tail` must be predictable.
-# MAGIC * `first()` and `head()` return one `Row`. `head(n)`, `take(n)`, and
-# MAGIC   `tail(n)` return a `list`.
-# MAGIC * `isEmpty()` is a yes/no check. Prefer it over `count() == 0`.
-# MAGIC * `collect()` and `toPandas()` move the full result to the driver. Keep
-# MAGIC   the DataFrame small.
-# MAGIC * Writes are actions too. Module 5 covers `DataFrame.write`.
-# MAGIC
+# MAGIC Reduce with `filter`, `select`, and `limit` first.
+
+# COMMAND ----------
+
+small_result = (
+    trips.filter(F.col("base_fare_amount").isNotNull())
+    .select("trip_id", "pickup_zone", "base_fare_amount")
+    .limit(3)
+)
+
+small_result.collect()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC **Next:** Module 5 — Reading, Writing, and Schemas.

@@ -26,8 +26,8 @@ Read the matching page in the course Notion hub before each notebook
 
 ## Dataset
 
-Small **ad-hoc** rideshare-flavored DataFrames built in code (a few rows), not
-`data/raw/`. Volume file reading starts in Module 5. Full course dataset:
+Small **ad-hoc** rideshare-flavored DataFrames built in code. Volume file
+reading starts in Module 5. Full course dataset:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 
 ## Notebook 01 — Apache Spark Architecture
@@ -54,8 +54,8 @@ Not applicable — no persistent data state.
 
 ### Boundaries
 
-No DataFrame examples, Spark UI, or jobs/stages lab. Architecture roles stay
-on Notion 10; jobs, stages, and tasks stay on Notion 11.
+No DataFrame examples or Spark UI. Architecture roles stay on Notion 10.
+Jobs, stages, and tasks stay on Notion 11 (lab in Module 4 notebook **04**).
 
 ### Next
 
@@ -65,8 +65,7 @@ on Notion 10; jobs, stages, and tasks stay on Notion 11.
 
 ### Context
 
-Lab after Notion 12. Shared Python state, magics, and `dbutils.fs` on the
-attached compute.
+Lab after Notion 12. Shared Python state, magics, and `dbutils.fs`.
 
 ### Learning objectives
 
@@ -95,8 +94,7 @@ Expected failure: `%sql SELECT base_fare` (`AnalysisException`).
 
 ### Context
 
-Lab after Notion 13. First DataFrame from in-notebook Python rows — not
-file reads from `data/raw/`.
+Lab after Notion 13. First DataFrame from in-notebook Python rows.
 
 ### Learning objectives
 
@@ -106,18 +104,16 @@ file reads from `data/raw/`.
 
 ### Lesson flow
 
-Small rideshare DataFrame from Python rows (no explicit schema); `show` /
-`display` / `printSchema`; inferred schema fine for demos, not for
-production.
+Four-row `trips` with column names; `spark.createDataFrame(trips, columns)`;
+`show` / `display` / `printSchema`.
 
 ### Expected state
 
-Not applicable — no persistent data state. Ad-hoc in-notebook rows only; see
-Dataset.
+Not applicable — no persistent data state.
 
 ### Next
 
-Module 2 — DataFrame Fundamentals (`01` in that module).
+Module 2 — DataFrame Fundamentals (`01 - Creating DataFrames`).
 
 ## Minimum privileges required
 

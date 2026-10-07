@@ -2,16 +2,37 @@
 # MAGIC %md
 # MAGIC # 01 - Unity Catalog Volumes and Data Landing
 # MAGIC
-# MAGIC Create the course catalog, volumes, and land repo source files — including
-# MAGIC controlled-bad CSVs for Module 6.
+# MAGIC This lab creates the storage environment used by the course.
 # MAGIC
-# MAGIC Repo `data/raw` (open from the Git folder) plus config-cell Azure
-# MAGIC values.
+# MAGIC We set up the ADLS storage layer and create the required Unity Catalog
+# MAGIC objects so the later notebooks have a consistent place to read source
+# MAGIC files and write processed outputs.
+# MAGIC
+# MAGIC Read the **Unity Catalog objects** and **Unity Catalog Volumes and Data
+# MAGIC Landing** lessons before running this lab. They explain the concepts used
+# MAGIC in the steps below.
+# MAGIC
+# MAGIC > **Prerequisite**
+# MAGIC >
+# MAGIC > The Azure storage access setup must already exist before running this lab:
+# MAGIC > - an Azure Access Connector with a Managed Identity
+# MAGIC > - the required Azure RBAC permissions on the storage
+# MAGIC > - a Unity Catalog Storage Credential that uses that identity
+# MAGIC >
+# MAGIC > Set the existing Storage Credential name in the `storage_credential`
+# MAGIC > variable in the lab configuration.
+# MAGIC
+# MAGIC Before running the lab, replace the example Azure values in the
+# MAGIC configuration cell with your own values.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Set Tier 1 lab config and create `rideshare_dev` landing/processed volumes
-# MAGIC - Copy canonical + controlled-bad sources into landing and verify
+# MAGIC - Create the project root folder in ADLS
+# MAGIC - Register the ADLS storage path as an External Location in Unity Catalog
+# MAGIC - Create the Catalog, Schemas, and Volumes used by the course
+# MAGIC - Copy the course sample files into the landing Volume
+# MAGIC - Verify that the storage setup is ready for later lessons
+
 # COMMAND ----------
 
 # Lab config — overwrite with YOUR Azure values before running.
@@ -32,9 +53,11 @@ print(f"storage_credential = {storage_credential}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 1. Create the rideshare project folder manually in the Azure Portal
+# MAGIC > #### 1. Create the project folder in ADLS
 # MAGIC >
-# MAGIC > In **your** storage account / container (from the config cell), create:
+# MAGIC > In the Azure Portal, create the project folder inside the ADLS
+# MAGIC > container from your lab configuration. This folder becomes the storage
+# MAGIC > root used by the lab.
 # MAGIC >
 # MAGIC > ```text
 # MAGIC > {container}/
@@ -44,7 +67,11 @@ print(f"storage_credential = {storage_credential}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 2. Create a Unity Catalog External Location pointing to that ADLS folder
+# MAGIC > #### 2. Create an External Location for the `rideshare` ADLS path
+# MAGIC >
+# MAGIC > Register the `rideshare` ADLS path with Unity Catalog as External
+# MAGIC > Location `el_rideshare_dev`. Unity Catalog uses the existing Storage
+# MAGIC > Credential to access this ADLS path.
 
 # COMMAND ----------
 
@@ -62,67 +89,31 @@ CREATE EXTERNAL LOCATION IF NOT EXISTS el_rideshare_dev
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 3. Test the external location
+# MAGIC > #### 3. Test the External Location
+# MAGIC >
+# MAGIC > Confirm that Databricks can reach the `rideshare` path before the later
+# MAGIC > steps use it.
 # MAGIC >
 # MAGIC > 1. Open **Catalog Explorer** → **External Locations** → `el_rideshare_dev`
-# MAGIC > 2. Click **Test connection** (top-right)
-# MAGIC > 3. All checks should show green: Read, List, Write, Delete, Path Exists,
-# MAGIC >    Hierarchical Namespace Enabled, **File Events Read**
+# MAGIC > 2. Click **Test connection**
+# MAGIC > 3. Confirm that the storage-access checks succeed
+# MAGIC >
+# MAGIC > A **File Events Read** check may also appear. This lab does not use File
+# MAGIC > Events, so that check does not need to succeed.
 # MAGIC
 # MAGIC <details>
-# MAGIC <summary><strong>Troubleshooting: File Events Read Failed (click to expand)</strong></summary>
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Step 1 — Verify the four required Azure roles are assigned**
-# MAGIC
-# MAGIC Go to Azure Portal → Storage Account (**your** `storage_account` from the
-# MAGIC config cell) → Access Control (IAM). Confirm the access connector's
-# MAGIC managed identity behind **your** `storage_credential` has:
-# MAGIC
-# MAGIC 1. Storage Account Contributor
-# MAGIC 2. Storage Blob Data Contributor
-# MAGIC 3. EventGrid EventSubscription Contributor
-# MAGIC 4. Storage Queue Data Contributor
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Step 2 — Check for ABAC conditions on role assignments**
-# MAGIC
-# MAGIC Look at the **Condition** column in the role assignments list.
-# MAGIC If any role shows "Add" (instead of "None"), it has a restricting condition.
-# MAGIC
-# MAGIC **Fix:** Delete the conditioned role assignment, then re-add the same role
-# MAGIC **without** conditions (select "Not constrained" on the Conditions tab).
-# MAGIC
-# MAGIC *Note: The conditions editor won't let you save with zero conditions —
-# MAGIC you must delete and re-create the assignment.*
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Step 3 — Check storage account networking**
-# MAGIC
-# MAGIC Go to Storage Account → Networking. Confirm:
-# MAGIC - **Public network access** = "Enabled from all networks", OR
-# MAGIC - If firewalled: "Allow Azure services on the trusted services list" is checked
-# MAGIC
-# MAGIC The queue endpoint (`*.queue.core.windows.net`) must be reachable from
-# MAGIC the Databricks control plane.
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Step 4 — Wait for role propagation and re-test**
-# MAGIC
-# MAGIC Azure role changes can take **5–10 minutes** to propagate.
-# MAGIC After fixing roles, wait a few minutes, then click **Test connection** again.
-# MAGIC The UI shows the cached last result until you explicitly re-run it.
-# MAGIC
+# MAGIC <summary><strong>Troubleshooting: Refer Step 3 — Test the External Location in notion page Unity Catalog Volumes and Data Landing
 # MAGIC </details>
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 4. Create the `rideshare_dev` catalog with a dedicated managed storage path
+# MAGIC > #### 4. Create the `rideshare_dev` Catalog and `landing` Schema
+# MAGIC >
+# MAGIC > `rideshare_dev` is the Catalog used by the course. Its managed storage
+# MAGIC > location is `{abfss_root}/uc-managed`.
+# MAGIC >
+# MAGIC > `rideshare_dev.landing` is the Schema used for source-data objects.
 
 # COMMAND ----------
 
@@ -161,7 +152,17 @@ COMMENT 'Catalog for the rideshare development project'
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 5. Create an external volume for the landing area, then create five dataset folders inside it
+# MAGIC > #### 5. Create the landing external Volume
+# MAGIC >
+# MAGIC > `rideshare_dev.landing.source_files` represents the `rideshare/landing`
+# MAGIC > ADLS folder.
+# MAGIC >
+# MAGIC > Later notebooks access the source files through:
+# MAGIC >
+# MAGIC > `/Volumes/rideshare_dev/landing/source_files`
+# MAGIC >
+# MAGIC > This step also creates the dataset folders used to organize the source
+# MAGIC > files under the Volume.
 
 # COMMAND ----------
 
@@ -201,10 +202,13 @@ display(dbutils.fs.ls(volume_path))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 6. Copy source files from the Git repository to the landing volume
-# MAGIC
-# MAGIC Open this notebook from the course **Git folder** so the copy cell can
-# MAGIC find `data/raw` by walking up from the working directory.
+# MAGIC > #### 6. Copy the course source files into the landing Volume
+# MAGIC >
+# MAGIC > Copy the sample source files from `data/raw` into their corresponding
+# MAGIC > dataset folders in the landing Volume.
+# MAGIC >
+# MAGIC > Run this notebook from the course **Git folder** so the `data/raw`
+# MAGIC > path is available.
 
 # COMMAND ----------
 
@@ -247,7 +251,15 @@ for dst_rel in file_map.values():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC > #### 7. Create a separate processed schema and destination external volume
+# MAGIC > #### 7. Create the processed output area
+# MAGIC >
+# MAGIC > `rideshare_dev.processed` is the Schema used for processed-data objects.
+# MAGIC >
+# MAGIC > `rideshare_dev.processed.output_files` represents the
+# MAGIC > `rideshare/processed` ADLS folder where later lessons write processed
+# MAGIC > files.
+# MAGIC >
+# MAGIC > The Volume may be empty at the end of this lab. That is expected.
 
 # COMMAND ----------
 
@@ -284,21 +296,11 @@ except Exception as e:
 # MAGIC ---
 # MAGIC ### Setup complete
 # MAGIC
-# MAGIC You now have:
-# MAGIC
-# MAGIC | Object | Name | Purpose |
-# MAGIC |--------|------|--------|
-# MAGIC | External Location | `el_rideshare_dev` | Connects Databricks to your ADLS project folder |
-# MAGIC | Catalog | `rideshare_dev` | Top-level container for all rideshare data |
-# MAGIC | Schema | `rideshare_dev.landing` | Holds raw source files as-is |
-# MAGIC | Schema | `rideshare_dev.processed` | Holds file outputs (and later managed-table previews) |
-# MAGIC | Volume | `landing.source_files` | 5 source datasets + 2 bad-data CSV files |
-# MAGIC | Volume | `processed.output_files` | Outputs under `practice/` (Module 5) and `curated/` (Module 6+) |
-# MAGIC
-# MAGIC `practice/` and `curated/` appear under `output_files` on **first write** —
-# MAGIC this notebook does not create those folders.
-# MAGIC
-# MAGIC Reading notebooks (CSV → … → write patterns) use Volume paths only.
-# MAGIC Governance of these objects is Module 11.
+# MAGIC | Object | Purpose |
+# MAGIC |---|---|
+# MAGIC | `el_rideshare_dev` | External Location for the `rideshare` ADLS path |
+# MAGIC | `rideshare_dev` | Catalog used by the course, with managed storage at `{abfss_root}/uc-managed` |
+# MAGIC | `rideshare_dev.landing.source_files` | Landing Volume for the course source files |
+# MAGIC | `rideshare_dev.processed.output_files` | Processed Volume for files written by later lessons |
 # MAGIC
 # MAGIC **Next:** `02 - Reading CSV`

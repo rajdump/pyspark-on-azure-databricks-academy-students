@@ -149,8 +149,11 @@ from pyspark.sql.types import (
     StructType,
 )
 
+# Reading path
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 payment_avro_path = f"{landing_root}/payment/payment.avro"
+
+# Writing path
 practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 practice_output_path = f"{practice_root}/payment_avro_roundtrip/"
 

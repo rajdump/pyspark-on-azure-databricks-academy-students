@@ -3,46 +3,27 @@
 ## Purpose
 
 Build core DataFrame fluency: create, inspect, reshape, express, filter, and
-query through temp views and Spark SQL. Reshape uses the DataFrame API and SQL
-expression strings; filtering includes intro NULL and blank traps. This is the
-API layer every later notebook reuses.
+query through temp views and Spark SQL.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
-- Explain what a Spark DataFrame is: distributed rows plus named, typed
-  columns and schema metadata
 - Create DataFrames from Python rows four ways: unnamed/inferred,
   named/inferred, named with DDL, named with `StructType`
-- Explain why inferred schemas are convenient for demos but risky in production
-- Inspect beyond a first look (`show`, `display`, `printSchema`, `columns`,
-  `dtypes`, `count`, summary stats)
-- Select, add, rename, recalculate, and drop columns (`select`, `withColumn` /
-  `withColumns`, `withColumnRenamed` / `withColumnsRenamed`, `drop`)
-- Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
-  `F.when` / `otherwise`
-- Express the same logic as SQL strings with `F.expr` and `selectExpr`
-  (including `CASE WHEN`) and reuse named SQL strings
-- Filter with `filter` / `where` (Column ops and SQL strings); intro NULL
-  checks (`isNull` / `isNotNull`); empty string ≠ NULL
-- Register a session temporary view with `createOrReplaceTempView`; query with
-  `%sql` and `spark.sql`
-- Register a global temporary view with `createOrReplaceGlobalTempView` and
-  query `global_temp` on classic compute
-- Prefer clear chained transforms that leave the original frame unchanged
-  until you assign a new one
+- Inspect contents, structure, size, and summary stats
+- Select, add, rename, recalculate, and drop columns
+- Build Column expressions with `F.col`, `F.lit`, `F.when` / `otherwise`,
+  `F.expr`, and `selectExpr`
+- Filter with `filter` / `where`, including intro NULL and blank traps
+- Query through session temp views (`%sql`, `spark.sql`) and a classic-only
+  global temporary view
 
 ## Prerequisites
 
-Module 1 — Azure Databricks and Spark Foundations. You should already attach
-compute, use notebook cells, and create a small DataFrame with
-`spark.createDataFrame(rows, columns)` plus basic `show` / `display` /
-`printSchema`.
+Module 1 — Azure Databricks and Spark Foundations.
 
 Read the matching page in the course Notion hub before notebooks **01–05**.
-Notebook **06** global temporary views require classic all-purpose compute —
-not serverless.
 
 ## Dataset
 
@@ -54,8 +35,7 @@ file reading starts in Module 5.
 
 ### Context
 
-Lab after the **Creating DataFrames** Notion page. Four ways to create a
-DataFrame from Python rows.
+Lab after the **Creating DataFrames** Notion page.
 
 ### Learning objectives
 
@@ -65,10 +45,9 @@ DataFrame from Python rows.
 
 ### Lesson flow
 
-Create without columns/schema (`_1`, `_2`, …); named + inferred (compare
-types with the RideEase model on Notion); DDL (`int` / `decimal(8,2)` vs
-inferred `long` / `double`); `StructType` (same contract as DDL); inspect
-each path.
+Rows only (`_1`, `_2`, …); named + inferred (compare types with the RideEase
+model on Notion); DDL (`int` / `decimal(8,2)` vs inferred `long` / `double`);
+`StructType` (same contract as DDL).
 
 ### Expected state
 
@@ -82,8 +61,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Lab after the **Inspecting DataFrames** Notion page. Inspect beyond a first
-look: contents, structure, size, and summary stats.
+Lab after the **Inspecting DataFrames** Notion page.
 
 ### Learning objectives
 
@@ -95,10 +73,9 @@ look: contents, structure, size, and summary stats.
 ### Lesson flow
 
 One intentionally bad trip (negative `trip_distance_miles`, huge
-`ride_duration_mins`); contents: `show` options (`n`, `truncate`,
-`vertical`) / `display`; structure: `printSchema`, `schema`, `columns`,
-`dtypes` (metadata — no Spark job); size: `count`, `isEmpty`; a filter can
-make a DataFrame empty; `describe` / `summary`.
+`ride_duration_mins`); `show` options (`n`, `truncate`, `vertical`) /
+`display`; `printSchema`, `schema`, `columns`, `dtypes`; `count`, `isEmpty`;
+a filter can make a DataFrame empty; `describe` / `summary`.
 
 ### Expected state
 
@@ -112,8 +89,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Lab after the **Selecting and Transforming Columns** Notion page. Reshape
-columns with the DataFrame API — the transforms later notebooks reuse.
+Lab after the **Selecting and Transforming Columns** Notion page.
 
 ### Learning objectives
 
@@ -125,13 +101,10 @@ columns with the DataFrame API — the transforms later notebooks reuse.
 
 ### Lesson flow
 
-`select` / reorder; `select` returns a new DataFrame (`df` unchanged); name
-strings vs `F.col`; `alias`, arithmetic, light `cast`, `F.lit`; `F.when` /
-`otherwise`; add with `withColumn` vs `select`; recalculate with
-`withColumn` vs `select("*", expr.alias(existing_name))` (duplicate column
-names); `withColumns`; `withColumnRenamed` / `withColumnsRenamed` / `drop`
-(missing names do not error); chain into a small ops-style output; source
-`df` unchanged.
+`select` / reorder; name strings vs `F.col`; `alias`, arithmetic, light
+`cast`, `F.lit`; `F.when` / `otherwise`; add with `withColumn` vs `select`;
+recalculate without duplicate names; `withColumns`; `withColumnRenamed` /
+`withColumnsRenamed` / `drop`; chain into one output; source `df` unchanged.
 
 ### Expected state
 
@@ -145,8 +118,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Lab after the **SQL Expressions in DataFrame Code** Notion page. Express the
-same column logic as SQL strings inside DataFrame code.
+Lab after the **SQL Expressions in DataFrame Code** Notion page.
 
 ### Learning objectives
 
@@ -155,10 +127,8 @@ same column logic as SQL strings inside DataFrame code.
 
 ### Lesson flow
 
-`F.expr` (SQL string → Column; reuse `mph_sql`); `selectExpr` (SQL strings
-→ new DataFrame; pass `mph_sql` with no `F.expr`); SQL `CASE WHEN` via
-`F.expr` and `selectExpr`; `selectExpr` ops-style output; source `df`
-unchanged.
+`F.expr` (reuse `mph_sql`); `selectExpr` (pass `mph_sql` with no `F.expr`);
+SQL `CASE WHEN`; `selectExpr` ops-style output; source `df` unchanged.
 
 ### Expected state
 
@@ -166,7 +136,7 @@ Not applicable — no persistent data state.
 
 ### Boundaries
 
-`%sql` / `spark.sql` (notebook 06).
+`%sql` / `spark.sql` wait for notebook **06**.
 
 ### Next
 
@@ -176,8 +146,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Lab after the **Filtering Rows** Notion page. Keep rows with `filter` /
-`where`, including intro NULL and blank traps.
+Lab after the **Filtering Rows** Notion page.
 
 ### Learning objectives
 
@@ -188,10 +157,9 @@ Lab after the **Filtering Rows** Notion page. Keep rows with `filter` /
 ### Lesson flow
 
 Sample includes NULL, empty-string, and negative-distance rows; `filter` /
-`where`; combine with SQL `AND` vs Column `&` (parens); Python `and` /
-`or` / `not` fail on Columns; `|`, `~`, `isin`, `between`, `like`; intro
-NULL (`== None` and `!= None` vs `isNull` / `isNotNull`); empty string ≠
-NULL; chain a usable-trip filter into one output; source `df` unchanged.
+`where`; SQL `AND` vs Column `&`; Python `and` / `or` / `not` fail on
+Columns; `|`, `~`, `isin`, `between`, `like`; `== None` vs `isNull`; empty
+string ≠ NULL; chain a usable-trip filter; source `df` unchanged.
 
 ### Expected state
 
@@ -205,8 +173,8 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Query a DataFrame through a session temporary view and Spark SQL, then a
-classic-only global temporary view.
+Session temporary views with `%sql` and `spark.sql`, then a classic-only
+global temporary view.
 
 ### Learning objectives
 
@@ -218,11 +186,9 @@ classic-only global temporary view.
 
 ### Lesson flow
 
-Why `%sql` / `spark.sql` cannot see a Python variable (`SELECT … FROM df`
-fails); session temp views (`createOrReplaceTempView("trips")`); `%sql`;
-`spark.sql` returns a DataFrame you can keep transforming in Python;
-`createOrReplaceGlobalTempView("trips_global")`; query
-`global_temp.trips_global`; prefer session views.
+`SELECT … FROM df` fails; `createOrReplaceTempView("trips")`; `%sql`;
+`spark.sql` returns a DataFrame; `createOrReplaceGlobalTempView("trips_global")`;
+query `global_temp.trips_global`; prefer session views.
 
 ### Expected state
 
@@ -234,7 +200,7 @@ supported on serverless.
 ### Boundaries
 
 `F.when` / `F.expr` / `selectExpr` (notebooks 03–04). Side-by-side DataFrame
-remakes of the same SQL query (Module 9). Persisted tables.
+remakes of the same SQL (Module 9). Persisted tables.
 
 ### Next
 

@@ -2,27 +2,19 @@
 # MAGIC %md
 # MAGIC # 02 - Reading CSV
 # MAGIC
-# MAGIC Read **`trip`** from landing with an explicit schema.
-# MAGIC
-# MAGIC `/Volumes/rideshare_dev/landing/source_files/trip/`.
+# MAGIC Read **`trip`** dataset from `/Volumes/rideshare_dev/landing/source_files/trip/`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Read CSV with an explicit schema vs **`inferSchema`**
 # MAGIC - Apply light reshape; write a practice output
+
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Import PySpark helpers and set paths for the **`trip`** dataset.
-# MAGIC
-# MAGIC Course **`trip`** columns (from `docs/data/dataset-overview.md`):
-# MAGIC **`trip_id`** (bigint), **`service_type`** (string),
-# MAGIC **`pickup_location_id`** (int), **`dropoff_location_id`** (int),
-# MAGIC **`trip_distance_miles`** (decimal(8,2)), **`request_to_pickup_mins`**
-# MAGIC (int), **`ride_duration_mins`** (int),
-# MAGIC **`driver_arrival_to_pickup_mins`** (int).
+# MAGIC Attach **all-purpose compute**.
 
 # COMMAND ----------
 
@@ -36,8 +28,11 @@ from pyspark.sql.types import (
     StructType,
 )
 
+# Reading path
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 trip_csv_path = f"{landing_root}/trip/trip.csv"
+
+# Writing paths
 practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 practice_output_path = f"{practice_root}/trip_csv_roundtrip/"
 malformed_demo_path = f"{practice_root}/malformed_csv_demo/"
@@ -50,10 +45,7 @@ print(f"practice_output_path = {practice_output_path}")
 # MAGIC %md
 # MAGIC ## 1. Source path
 # MAGIC
-# MAGIC **`trip/trip.csv`** was copied into the landing volume in Notebook 01.
-# MAGIC Format notebooks in this module read through **`/Volumes/...`** paths — Unity
-# MAGIC Catalog resolves those paths to your external storage without hardcoding
-# MAGIC **`abfss://`** URLs in every cell.
+# MAGIC **`trip.csv`** was copied into the landing volume in Notebook 01.
 
 # COMMAND ----------
 
@@ -62,101 +54,54 @@ display(dbutils.fs.ls(f"{landing_root}/trip"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You should see **`trip.csv`** and the full-size controlled-bad
-# MAGIC **`bad_trip_data.csv`** variant in that folder. The path variable
-# MAGIC **`trip_csv_path`** points specifically to **`trip.csv`** for the reads below.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 2. Default CSV read
+# MAGIC ## 2. CSV header
 # MAGIC
-# MAGIC Spark's CSV default is **`header=False`**: every row is treated as data and
-# MAGIC columns get generic names (**`_c0`**, **`_c1`**, …). Only after you see that
-# MAGIC behavior does **`header=True`** make sense.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ### 2a. Without header
 # MAGIC
-# MAGIC Read **`trip.csv`** with no options — the first line of the file (the real
-# MAGIC column names) is ingested as an ordinary data row.
+# MAGIC Read `trip.csv` without any CSV options set.
+# MAGIC
+# MAGIC Since `header=True` is not specified, Spark considers the first line as a data row rather than using it as column names.
 
 # COMMAND ----------
 
 trip_no_header = spark.read.csv(trip_csv_path)
-
-print("Default read without header (generic column names):")
-trip_no_header.printSchema()
-trip_no_header.show(1, vertical=True)
+trip_no_header.show(3)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Column names are **`_c0`**, **`_c1`**, … and row 1 contains
-# MAGIC **`trip_id`**, **`service_type`**, … as **values** — not as schema. Legacy
-# MAGIC feeds without a header row look like this on purpose; our file **does** have
-# MAGIC a header, so we fix that next.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 2b. With **`header=True`** — two equivalent syntaxes
+# MAGIC ### 2b. With **`header=True`**
 # MAGIC
-# MAGIC Tell Spark the first row is column names. Still no schema inference — every
-# MAGIC column stays **`string`**. Spark exposes two equivalent ways to read CSV:
+# MAGIC Tell Spark to use the first row as column names. Schema inference is still off, so every column stays **`string`**.
 
 # COMMAND ----------
-
-trip_strings_shorthand = spark.read.option("header", True).csv(trip_csv_path)
 
 trip_strings = (
     spark.read.format("csv").option("header", True).load(trip_csv_path)
 )
 
-print("Shorthand — .option(...).csv(path):")
-trip_strings_shorthand.printSchema()
-
-print("Generic — .format('csv').option(...).load(path):")
 trip_strings.printSchema()
+trip_strings.show(3)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Both builds return the same schema. **`.csv(path)`** is compact shorthand;
-# MAGIC **`format("csv").load(path)`** is the generic DataSource API.
-# MAGIC
-# MAGIC **Recommended in this module:** **`format("csv").load(...)`** and
-# MAGIC **`format("csv").save(...)`** — the same **`format(...).load(...)`** pattern
-# MAGIC works for JSON, Parquet, Avro, and XML in the notebooks ahead, so pipelines
-# MAGIC stay consistent. Shorthand is fine for quick CSV-only exploration.
-# MAGIC
-# MAGIC The cells below use the **`format("csv")`** form. **`trip_strings`** is the
-# MAGIC DataFrame we carry forward.
+# MAGIC ## 3. Another way to read CSV
 
 # COMMAND ----------
 
-print("Sample row from trip_strings:")
-trip_strings.show(1, vertical=True)
+trip_strings_shorthand = spark.read.option("header", True).csv(trip_csv_path)
+
+trip_strings_shorthand.show(3)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Column names now match the file header, and every column is still **`string`**.
-# MAGIC That is Spark's safe default for CSV — text files do not embed type metadata.
-# MAGIC If you leave types as strings, numeric columns behave like text in filters and
-# MAGIC aggregations (Module 3 showed why typing matters).
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 3. Schema inference
+# MAGIC ## 4. Schema inference
 # MAGIC
-# MAGIC **`inferSchema=True`** asks Spark to scan the file and guess column types.
-# MAGIC Convenient for exploration; less predictable in production. Use
-# MAGIC **`.show(1, vertical=True)`** on wide tables so one sample row is easy to
-# MAGIC read alongside **`printSchema()`**.
+# MAGIC `inferSchema=True` asks Spark to inspect the CSV values and determine the column types.
+# MAGIC
+# MAGIC It is useful for exploration, but when the expected schema is already known, an explicit schema gives you more control.
 
 # COMMAND ----------
 
@@ -167,36 +112,26 @@ trip_inferred = (
     .load(trip_csv_path)
 )
 
-print("Inferred schema:")
 trip_inferred.printSchema()
-trip_inferred.show(1, vertical=True)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Inference usually produces reasonable types on clean data, but it requires an
-# MAGIC **extra pass over the file** to sample values. On large or messy feeds, guesses
-# MAGIC can be wrong (for example, ID columns inferred as numbers when they should
-# MAGIC stay strings). Module 4 also reminded you that anything that forces Spark to
-# MAGIC inspect data — like **`count()`** — is an **action**. Treat inference as a
-# MAGIC trade-off: less upfront work, less control.
+# MAGIC Compare Spark's inferred type for **`trip_distance_miles`** with the expected type **`decimal(8,2)`** in the next section.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Explicit schema
+# MAGIC ## 5. Explicit schema
 # MAGIC
-# MAGIC The production pattern: declare the contract up front and pass it to
-# MAGIC **`.schema(...)`**. Module 2 introduced two equivalent forms — a **DDL
-# MAGIC schema string** and a **`StructType`**. File reads accept either.
+# MAGIC For a known schema, define the column names and types up front and pass the schema to **`.schema(...)`**.
+# MAGIC
+# MAGIC As introduced in Module 2, you can provide the schema as either a **DDL string** or a **StructType**.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4a. DDL schema string
-# MAGIC
-# MAGIC A comma-separated list of **`column_name type`** pairs — the same style used
-# MAGIC in **`createDataFrame(..., schema_ddl)`** back in Module 2.
+# MAGIC ### 5a. DDL schema string
 
 # COMMAND ----------
 
@@ -220,28 +155,24 @@ trip = (
 
 print("Read with DDL schema:")
 trip.printSchema()
-trip.show(1, vertical=True)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4b. `StructType` schema
-# MAGIC
-# MAGIC **`StructType`** is the same contract expressed as Python objects — useful
-# MAGIC when a schema is built or reused programmatically.
+# MAGIC ### 5b. `StructType` schema
 
 # COMMAND ----------
 
 trip_schema = StructType(
     [
-        StructField("trip_id", LongType(), False),
-        StructField("service_type", StringType(), False),
-        StructField("pickup_location_id", IntegerType(), False),
-        StructField("dropoff_location_id", IntegerType(), False),
-        StructField("trip_distance_miles", DecimalType(8, 2), False),
-        StructField("request_to_pickup_mins", IntegerType(), False),
-        StructField("ride_duration_mins", IntegerType(), False),
-        StructField("driver_arrival_to_pickup_mins", IntegerType(), False),
+        StructField("trip_id", LongType()),
+        StructField("service_type", StringType()),
+        StructField("pickup_location_id", IntegerType()),
+        StructField("dropoff_location_id", IntegerType()),
+        StructField("trip_distance_miles", DecimalType(8, 2)),
+        StructField("request_to_pickup_mins", IntegerType()),
+        StructField("ride_duration_mins", IntegerType()),
+        StructField("driver_arrival_to_pickup_mins", IntegerType()),
     ]
 )
 
@@ -258,66 +189,42 @@ trip_via_struct.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use **`trip`** (DDL read) for the rest of this notebook. When the source
-# MAGIC layout is stable, explicit schemas — DDL or **`StructType`** — make pipelines
-# MAGIC repeatable and reviewable. Types apply at read time; no separate cast step
-# MAGIC is needed when the file matches the contract.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 5. Schema validation
-# MAGIC
-# MAGIC After any read, confirm three things before downstream steps: Spark's schema,
-# MAGIC column names, and a quick row sample. On small landing files, a row count is
-# MAGIC cheap sanity check too.
-
-# COMMAND ----------
-
-print("Spark schema:")
-trip.printSchema()
-
-print(f"\nColumn names ({len(trip.columns)} columns):")
-print(trip.columns)
-
-print("\nSample row:")
-trip.show(1, vertical=True)
-
-row_count = trip.count()
-print(f"\nRow count: {row_count} (expect 100 for the course trip file)")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **`printSchema()`** and **`.columns`** inspect metadata on the driver — they
-# MAGIC do not modify data, add steps to the logical plan, or trigger a Spark job.
-# MAGIC **`count()`** is an action — it executes the read plan and scans the file.
-# MAGIC In production jobs, row-count checks often catch empty files or partial loads
-# MAGIC early.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 6. Malformed records
 # MAGIC
-# MAGIC Real feeds arrive with bad rows — missing fields, extra commas, truncated
-# MAGIC lines. Do **not** edit the landed **`trip.csv`** to simulate this. Instead,
-# MAGIC write a tiny demo file under **`practice/`** and compare **`FAILFAST`**,
-# MAGIC **`PERMISSIVE`**, and **`DROPMALFORMED`**.
+# MAGIC A **malformed record** is a row that Spark cannot parse using the schema.
+# MAGIC
+# MAGIC For example, if **`trip_distance_miles`** is defined as **`decimal(8,2)`** but the value is **`not_a_distance`**, that row is malformed.
+# MAGIC
+# MAGIC The **`mode`** option controls what Spark does with malformed records:
+# MAGIC
+# MAGIC - **`FAILFAST`** — stop with an error
+# MAGIC - **`PERMISSIVE`** — keep the row and set the invalid value to `null`
+# MAGIC - **`DROPMALFORMED`** — drop the row
+# MAGIC
+# MAGIC `PERMISSIVE` is the default mode.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 6a. Create a demo file
+# MAGIC
+# MAGIC Row 2 has **`not_a_distance`** in **`trip_distance_miles`** (**`decimal(8,2)`**).
 
 # COMMAND ----------
 
 malformed_csv_path = f"{malformed_demo_path}bad_trips.csv"
+malformed_schema = "trip_id int, service_type string, trip_distance_miles decimal(8,2)"
 
 dbutils.fs.mkdirs(malformed_demo_path)
+
 dbutils.fs.put(
     malformed_csv_path,
     """trip_id,service_type,trip_distance_miles
 1,Standard,5.54
-2,Premium
+2,Premium,not_a_distance
 3,Standard,4.44
 """,
-    True,
+    overwrite=True,
 )
 
 print(f"Wrote demo file to {malformed_csv_path}")
@@ -325,8 +232,10 @@ print(f"Wrote demo file to {malformed_csv_path}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Row 2 is missing the distance field. **`FAILFAST`** stops the read at the
-# MAGIC first bad row — useful when bad data should halt the pipeline.
+# MAGIC ### 6b. `FAILFAST` — stop on the first bad row
+# MAGIC
+# MAGIC The read fails as soon as an action reaches row 2. Use it when bad input
+# MAGIC must stop the pipeline.
 
 # COMMAND ----------
 
@@ -335,6 +244,7 @@ try:
         spark.read.format("csv")
         .option("header", True)
         .option("mode", "FAILFAST")
+        .schema(malformed_schema)
         .load(malformed_csv_path)
         .show()
     )
@@ -345,14 +255,15 @@ except Exception as exc:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`PERMISSIVE`** keeps good rows and parks corrupt lines in a
-# MAGIC **`_corrupt_record`** column so you can inspect or quarantine them later.
-# MAGIC Include **`_corrupt_record`** in your explicit schema — otherwise Spark
-# MAGIC will not surface the corrupt lines in a dedicated column.
+# MAGIC ### 6c. `PERMISSIVE` — keep the row, null the bad value
+# MAGIC
+# MAGIC Spark keeps the malformed row and sets the invalid `trip_distance_miles` value to **`null`**.
+# MAGIC
+# MAGIC To keep the original CSV line for inspection, add a **`_corrupt_record`** string column to the schema.
 
 # COMMAND ----------
 
-permissive_schema = "trip_id int, service_type string, trip_distance_miles decimal(8,2), _corrupt_record string"
+permissive_schema = f"{malformed_schema}, _corrupt_record string"
 
 (
     spark.read.format("csv")
@@ -367,8 +278,7 @@ permissive_schema = "trip_id int, service_type string, trip_distance_miles decim
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`DROPMALFORMED`** silently drops corrupt rows and returns only well-formed
-# MAGIC records — useful when bad rows should disappear without failing the job.
+# MAGIC ### 6d. `DROPMALFORMED` — drop the bad row
 
 # COMMAND ----------
 
@@ -376,6 +286,7 @@ permissive_schema = "trip_id int, service_type string, trip_distance_miles decim
     spark.read.format("csv")
     .option("header", True)
     .option("mode", "DROPMALFORMED")
+    .schema(malformed_schema)
     .load(malformed_csv_path)
     .show(truncate=False)
 )
@@ -385,8 +296,7 @@ permissive_schema = "trip_id int, service_type string, trip_distance_miles decim
 # MAGIC %md
 # MAGIC ## 7. Light reshape
 # MAGIC
-# MAGIC Before writing, **`select`** a small column set for a downstream preview.
-# MAGIC This module stops at light reshape — deeper transforms belong in Module 6.
+# MAGIC Before writing the CSV output, use **`select()`** to keep only the columns needed for this example.
 
 # COMMAND ----------
 
@@ -404,21 +314,15 @@ trip_subset.show(3)
 # MAGIC %md
 # MAGIC ## 8. CSV round trip
 # MAGIC
-# MAGIC Write the subset to **`practice/trip_csv_roundtrip/`**, then read it back.
-# MAGIC CSV is still text on disk — Spark does **not** remember that
-# MAGIC **`trip_distance_miles`** was a decimal. Reads in section 2b showed both
-# MAGIC syntaxes; the write below uses **`format("csv").save(...)`** (recommended).
-# MAGIC The shorthand **`.csv(...)`** equivalent is shown as a comment only.
+# MAGIC Write the selected columns to **`practice/trip_csv_roundtrip/`** using **`mode("overwrite")`**, so each re-run replaces the existing data in that folder. Then read the CSV output back into Spark.
+# MAGIC
+# MAGIC CSV does not store Spark data types, so when the file is read again without a schema, `trip_distance_miles` is read as a **`string`** instead of `decimal(8,2)`.
 
 # COMMAND ----------
 
-# Recommended — consistent with other formats in this module
 trip_subset.write.format("csv").mode("overwrite").option("header", True).save(
     practice_output_path
 )
-
-# Shorthand equivalent:
-# trip_subset.write.mode("overwrite").option("header", True).csv(practice_output_path)
 
 print(f"Wrote CSV folder to {practice_output_path}")
 display(dbutils.fs.ls(practice_output_path))
@@ -429,9 +333,8 @@ roundtrip_strings = (
     spark.read.format("csv").option("header", True).load(practice_output_path)
 )
 
-print("Re-read without a schema (types revert to string):")
+print("Re-read without an explicit schema (types revert to string):")
 roundtrip_strings.printSchema()
-roundtrip_strings.show(1, vertical=True)
 
 # COMMAND ----------
 
@@ -449,41 +352,17 @@ roundtrip_typed = (
 
 print("Re-read with explicit schema (types restored):")
 roundtrip_typed.printSchema()
-roundtrip_typed.show(1, vertical=True)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC We used **`.mode("overwrite")`** so re-running this cell replaces the prior
-# MAGIC folder. Save modes in depth — append, error, ignore — are covered in
-# MAGIC **07 - Write Patterns and Table Preview**. Parquet (next formats in this
-# MAGIC module) preserves types without this round-trip loss.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **CSV syntax** — **`.csv(path)`** / **`.csv(...)`** shorthand and
-# MAGIC   **`format("csv").load(...)`** / **`format("csv").save(...)`** are
-# MAGIC   equivalent; prefer **`format("csv")`** in this module for consistency
-# MAGIC   across file formats
-# MAGIC - **Volume paths** — reads use
-# MAGIC   **`/Volumes/rideshare_dev/landing/source_files/...`**, not raw
-# MAGIC   **`abfss://`** URLs
-# MAGIC - **Default CSV read** — without **`header`**, Spark uses **`_c0`**, **`_c1`**, …
-# MAGIC   and treats every row as data; **`header=True`** uses the first row as
-# MAGIC   column names (still all **`string`** types without a schema)
-# MAGIC - **`inferSchema=True`** — Spark guesses types after an extra data pass;
-# MAGIC   fine for exploration, risky for production contracts
-# MAGIC - **Explicit schema (DDL or `StructType`)** — recommended production
-# MAGIC   pattern; types apply at read time
-# MAGIC - **Validation** — check **`printSchema()`**, column names, samples, and
-# MAGIC   row counts before trusting a landing file
-# MAGIC - **Malformed rows** — **`FAILFAST`** halts early; **`PERMISSIVE`** +
-# MAGIC   **`_corrupt_record`** quarantines bad lines; **`DROPMALFORMED`** drops them
-# MAGIC - **CSV round trip** — writing CSV loses Spark types; re-apply a schema on
-# MAGIC   read (Parquet avoids this — coming up next)
+# MAGIC - **Default CSV read** — without **`header=True`**, Spark uses column names such as **`_c0`**, **`_c1`**, and treats the first line as data. With **`header=True`**, Spark uses the first line as column names. Without a schema, the columns are still read as **`string`**.
+# MAGIC - **`inferSchema=True`** — Spark inspects the CSV values and determines the column types. This requires an extra pass over the data.
+# MAGIC - **Explicit schema** — pass either a **DDL string** or a **`StructType`** to **`.schema(...)`** when the expected column names and types are already known.
+# MAGIC - **Malformed records** — Spark treats a record as malformed when a value cannot be converted to its schema type or when the number of values does not match the schema. **`FAILFAST`** fails when an action reaches the record, **`PERMISSIVE`** keeps it with `null` values and can store the original line in **`_corrupt_record`**, and **`DROPMALFORMED`** drops it.
+# MAGIC - **CSV round trip** — CSV does not store Spark data types. When the written CSV is read again without a schema, the columns are read as strings. Reapply the schema to restore the expected types.
 # MAGIC
 # MAGIC **Next:** **03 - Reading JSON** — read **`zone_lookup`** (JSON Lines) from
 # MAGIC the landing volume.

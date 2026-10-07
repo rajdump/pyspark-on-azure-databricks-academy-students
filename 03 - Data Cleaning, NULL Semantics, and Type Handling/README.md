@@ -3,33 +3,24 @@
 ## Purpose
 
 Fix imperfect values and write NULL-aware predicates on hand-built rideshare
-DataFrames — before file-based ingestion. Module 2 introduced the DataFrame
-API and filter traps; this module goes deeper on three-valued logic, messy
-values, safe casting, and parsing under Spark 4 / ANSI mode (prefer `try_*`
-helpers over disabling ANSI globally).
+DataFrames — before file-based ingestion.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
-- Explain three-valued logic (`TRUE` / `FALSE` / `NULL`) and why filters keep
-  only `TRUE` rows
+- Explain three-valued logic and why filters keep only `TRUE` rows
 - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` + NULL
   trap, and `eqNullSafe` / `<=>`
-- Identify missing data as `NULL`, blanks, sentinels, and `NaN`; normalize to
-  real `NULL` before drop/fill
-- Use `na.drop` (`how="any"` / `"all"`, `subset`), `na.fill`, and `na.replace`;
-  use `F.coalesce` for column fallbacks (not partition `DataFrame.coalesce(n)`)
-- Cast with `cast` and `try_cast`; detect rows rejected by a cast
-- Handle numeric overflow and unparseable dates/timestamps with Spark 4 /
-  ANSI `try_*` helpers
-- Chain cleaning and predicate logic on small hand-built DataFrames
+- Identify `NULL`, blanks, sentinels, and `NaN`; normalize before drop/fill
+- Use `na.drop`, `na.fill`, `na.replace`, and `F.coalesce`
+- Cast with `cast` and `try_cast`; detect rejected rows
+- Handle numeric overflow and unparseable dates with Spark 4 / ANSI `try_*`
+  helpers
 
 ## Prerequisites
 
-Module 2 — DataFrame Fundamentals. You should already know `select`,
-`withColumn`, `filter` / `where`, `F.col`, `F.when`, intro NULL checks, and
-empty string vs `NULL`.
+Module 2 — DataFrame Fundamentals. Classic all-purpose compute or serverless.
 
 ## Dataset
 
@@ -42,7 +33,6 @@ file reading starts in Module 5.
 ### Context
 
 Three-valued logic and NULL-safe predicates — before messy-value cleanup.
-Classic all-purpose or serverless.
 
 ### Learning objectives
 
@@ -54,10 +44,9 @@ Classic all-purpose or serverless.
 
 Card-tip reward columns (`TRUE` / `FALSE` / `NULL`); filter keeps only
 `TRUE`; `isNull` / `isNotNull` on `payment_method`; `~isin` drops `NULL`
-pickup (zones other than 74 and 231); `None` in the `isin` list empties the
-filter; `isNull() | ~isin(74, 231)` keeps missing pickup — do not put
-`None` in the list; `eqNullSafe` / `<=>`; filter `location_allowed &
-qualifies_for_reward`.
+pickup (zones 74 and 231); `None` in the `isin` list empties the filter;
+`isNull() | ~isin(74, 231)` keeps missing pickup; `eqNullSafe` / `<=>`;
+filter `location_allowed & qualifies_for_reward`.
 
 ### Expected state
 
@@ -71,8 +60,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-Normalize missing shapes to real `NULL` before drop/fill. Classic
-all-purpose or serverless.
+Normalize missing shapes to real `NULL` before drop/fill.
 
 ### Learning objectives
 
@@ -82,12 +70,10 @@ all-purpose or serverless.
 
 ### Lesson flow
 
-`NULL` vs blanks / `"N/A"` / `-1` / `NaN`; trim payment; `when` then
-`na.replace` to store sentinels, `NaN`, and empty payment as `NULL`; count
-missing payments (keep rows); `na.fill` subset then dict then by type;
-`na.drop` (`how="any"` / `"all"`, `subset`); `F.coalesce` recorded /
-backup / `"unknown"` (not partition coalesce); chain normalize, decide
-(drop wait, fill tip and payment), validate.
+`NULL` vs blanks / `"N/A"` / `-1` / `NaN`; trim payment; store sentinels,
+`NaN`, and empty payment as `NULL`; count missing payments; `na.fill`;
+`na.drop` (`how="any"` / `"all"`, `subset`); `F.coalesce` recorded / backup /
+`"unknown"`; chain normalize, decide, validate.
 
 ### Expected state
 
@@ -101,9 +87,7 @@ Not applicable — no persistent data state.
 
 ### Context
 
-`cast` fails the job on invalid text under ANSI; `try_cast` returns `NULL`
-and the job continues. Then find rejected rows. Classic all-purpose or
-serverless.
+Invalid text under ANSI: `cast` fails the job; `try_cast` returns `NULL`.
 
 ### Learning objectives
 
@@ -114,10 +98,8 @@ serverless.
 ### Lesson flow
 
 String `base_fare_amount` including `"N/A"` and a true `NULL`; `cast` to
-`decimal(10,2)` fails the job (`CAST_INVALID_INPUT`); `try_cast` writes
-`NULL` for invalid text; rejected rows are
-`source.isNotNull() & casted.isNull()` — an original `NULL` is not
-rejected. Do not disable ANSI.
+`decimal(10,2)` fails (`CAST_INVALID_INPUT`); `try_cast` writes `NULL` for
+invalid text; original `NULL` is not a rejected row.
 
 ### Expected state
 
@@ -129,17 +111,15 @@ Not applicable — no persistent data state.
 
 ### Boundaries
 
-Overflow, `try_add`, and date/timestamp parsing belong in notebook 04. Do
-not teach unsupported type pairs or disable ANSI.
+Overflow and date/timestamp parsing wait for notebook **04**. Do not disable
+ANSI.
 
 ## Notebook 04 — Numeric Overflow and Date-Timestamp Parsing
 
 ### Context
 
-`+` fails the job on overflow under ANSI; `try_add` returns `NULL` and the
-job continues. `to_date` fails on invalid text; `try_to_date` /
-`try_to_timestamp` return `NULL`. Then find failed conversions. Classic
-all-purpose or serverless.
+Overflow and unparseable dates under ANSI: `+` / `to_date` fail the job;
+`try_add` / `try_to_date` / `try_to_timestamp` return `NULL`.
 
 ### Learning objectives
 
@@ -150,14 +130,11 @@ all-purpose or serverless.
 
 ### Lesson flow
 
-One DataFrame: `trip_id`, `ride_duration_mins`, `trip_date` text including
-`"not-a-date"` and a true `NULL`; `ride_duration_mins + ride_duration_mins`
-fails the job (`ARITHMETIC_OVERFLOW`) on the max `int`; `try_add` writes
-`NULL`; `to_date` with `yyyy-MM-dd` fails the job (`CAST_INVALID_INPUT`);
-print session timezone; `try_to_date` / `try_to_timestamp` write `NULL`
-for invalid text; failed conversions are
-`source.isNotNull() & parsed.isNull()` — an original `NULL` is not a
-failed conversion. Do not disable ANSI.
+`trip_id`, `ride_duration_mins`, `trip_date` text including `"not-a-date"`
+and a true `NULL`; `+` fails (`ARITHMETIC_OVERFLOW`) on max `int`; `try_add`
+writes `NULL`; `to_date` with `yyyy-MM-dd` fails (`CAST_INVALID_INPUT`);
+print session timezone; `try_to_date` / `try_to_timestamp` write `NULL` for
+invalid text; original `NULL` is not a failed conversion.
 
 ### Expected state
 

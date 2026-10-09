@@ -87,14 +87,6 @@ write_source.show(3)
 
 # COMMAND ----------
 
-trip_time11 = (
-    spark.read.format("parquet")
-    .load(trip_time_parquet_path)
-)
-trip_time11.printSchema()
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## 2. Save modes
 # MAGIC

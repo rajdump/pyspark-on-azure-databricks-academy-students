@@ -11,6 +11,7 @@
 # MAGIC - Clear landing and recopy from notebook **01**
 # MAGIC - Fully tear down catalog, external location, and ADLS folder while leaving the
 # MAGIC   storage credential in place
+
 # COMMAND ----------
 
 # Lab config — must match Notebook 01 (overwrite with YOUR values).

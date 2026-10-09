@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 01 - Column Transforms with Built-in Functions
 # MAGIC
@@ -17,8 +21,7 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Import Spark's built-in functions and define the paths and table name used in
-# MAGIC this notebook.
+# MAGIC Attach **all-purpose compute**.
 
 # COMMAND ----------
 

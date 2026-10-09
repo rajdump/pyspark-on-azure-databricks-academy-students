@@ -109,7 +109,9 @@ labs → **11** isolated Delta labs (does not mutate pipeline tables).
 
 Notebooks use `/Volumes/...` paths, not hardcoded `abfss://` URLs. Module 5
 notebooks **01** / **99** may build an `abfss://` root from config for
-external-location / managed-location DDL and ADLS teardown only.
+external-location / managed-location DDL and ADLS teardown. Module 10
+notebook **03** and Module 11 notebooks derive `{url}/external-tables/…` for
+external table `LOCATION` — see [Path patterns](#path-patterns).
 
 ### Module 5 — Reading, Writing, and Schemas
 

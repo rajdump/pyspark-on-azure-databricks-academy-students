@@ -101,6 +101,11 @@ are finished with.
 Modules 1 through 4 are not in this picture. They build small DataFrames in code,
 aligned with these schemas, and read no files and no tables.
 
+Modules 10 and 11 are not in it either. They work on isolated Delta lab tables
+and folders and do not read or change the pipeline tables — see
+[Module 10](dataset-overview.md#module-10--delta-lake-foundations) and
+[Module 11](dataset-overview.md#module-11--delta-lake-transactions-schema-and-maintenance).
+
 ## What each module uses and creates
 
 The names below are here to orient you. They are not the contract — exact
@@ -123,9 +128,10 @@ flowchart LR
 Notebook 01 is setup as well as landing: it creates the catalog, both schemas,
 both volumes, and one folder per dataset before copying the files in, including
 the two deliberately broken CSVs. Each dataset lands in exactly one format, which
-is why notebooks 02 to 06 each read a different one — `trip` as CSV, `trip_time`
-as Parquet, `zone_lookup` as JSON Lines, `payment` as Avro, `drivers` as XML.
-Notebook 99 removes everything again.
+is why notebooks 02 to 06 each read a different one — see
+[Module 5](dataset-overview.md#module-5--reading-writing-and-schemas) for the
+format map. Notebook 99 is an opt-in, tiered reset; its levels are described in
+the Module 5 `README.md`.
 
 ### Module 6 curates
 
@@ -159,10 +165,10 @@ flowchart LR
     NB07 --> TDA[("processed.trip_driver_assignment")]
 ```
 
-Module 7 is not fed by curated data alone. Notebooks 01 and 02 read landing files
-only, and even the build notebook takes `trip`, `payment`, and `drivers_flat`
-from curated but `trip_time` and `zone_lookup` from landing, because no curated
-version of those two exists.
+Module 7 is not fed by curated data alone: some inputs still come from landing,
+because no curated version of `trip_time` or `zone_lookup` exists. The exact
+inputs per notebook are in
+[Module 7](dataset-overview.md#module-7--joins-and-set-operations).
 
 ### Module 8 aggregates
 
@@ -199,8 +205,10 @@ point: the same questions, answered in SQL.
 tiers. Bronze, Silver, and Gold are data layers designed later (Module 13);
 Module 10 names them only to contrast those layers with managed vs external
 table types. They are not Module 5 schema names. Inside the processed volume, `practice/` is where exercise
-output goes, and `curated/` holds the pipeline output that later modules depend
-on. Object names, which volumes are external, and when those folders appear are
+output and the Module 10 lab folders go, and `curated/` holds the pipeline output
+that later modules depend on. External lab tables in Modules 10 and 11 live
+outside the volume — see [Path patterns](dataset-overview.md#path-patterns).
+Object names, which volumes are external, and when those folders appear are
 recorded in
 [Unity Catalog platform reference](dataset-overview.md#unity-catalog-platform-reference).
 

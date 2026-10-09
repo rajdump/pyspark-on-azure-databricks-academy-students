@@ -71,8 +71,10 @@ Normalize missing shapes to real `NULL` before drop/fill.
 ### Lesson flow
 
 `NULL` vs blanks / `"N/A"` / `-1` / `NaN`; trim payment; store sentinels,
-`NaN`, and empty payment as `NULL`; count missing payments; `na.fill`;
-`na.drop` (`how="any"` / `"all"`, `subset`); `F.coalesce` recorded / backup /
+`NaN`, and empty payment as `NULL`; count missing payments; `na.fill`
+(subset, dict, by type); `na.replace` for the same sentinel / `NaN` /
+empty-string normalization; `na.drop` (`how="any"` / `"all"`, `subset`);
+`F.coalesce` recorded / backup /
 `"unknown"`; chain normalize, decide, validate.
 
 ### Expected state
@@ -132,8 +134,8 @@ Overflow and unparseable dates under ANSI: `+` / `to_date` fail the job;
 
 `trip_id`, `ride_duration_mins`, `trip_date` text including `"not-a-date"`
 and a true `NULL`; `+` fails (`ARITHMETIC_OVERFLOW`) on max `int`; `try_add`
-writes `NULL`; `to_date` with `yyyy-MM-dd` fails (`CAST_INVALID_INPUT`);
-print session timezone; `try_to_date` / `try_to_timestamp` write `NULL` for
+writes `NULL`; print session timezone; `to_date` with `yyyy-MM-dd` fails
+(`CAST_INVALID_INPUT`); `try_to_date` / `try_to_timestamp` write `NULL` for
 invalid text; original `NULL` is not a failed conversion.
 
 ### Expected state

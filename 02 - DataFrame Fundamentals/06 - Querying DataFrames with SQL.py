@@ -127,7 +127,7 @@ long_trips.filter(F.col("service_type") == "Shared").show()
 
 # COMMAND ----------
 
- df.createOrReplaceGlobalTempView("trips_global")
+df.createOrReplaceGlobalTempView("trips_global")
 
 # COMMAND ----------
 

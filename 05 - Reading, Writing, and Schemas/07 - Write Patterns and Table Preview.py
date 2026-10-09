@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 07 - Write Patterns and Table Preview
 # MAGIC
@@ -18,8 +22,7 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Attach **all-purpose compute**. The next cell sets the source path, the
-# MAGIC practice output paths, and the managed table name.
+# MAGIC Attach **all-purpose compute**.
 
 # COMMAND ----------
 
@@ -56,8 +59,7 @@ display(dbutils.fs.ls(f"{landing_root}/trip_time"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Load the file with an explicit schema into **`write_source`**. Every write
-# MAGIC below uses this DataFrame.
+# MAGIC The notebook reads `trip_time.parquet` using an explicit schema, then selects the required columns into a DataFrame named `write_source`. All write examples in this lesson use this DataFrame.
 
 # COMMAND ----------
 
@@ -85,12 +87,20 @@ write_source.show(3)
 
 # COMMAND ----------
 
+trip_time11 = (
+    spark.read.format("parquet")
+    .load(trip_time_parquet_path)
+)
+trip_time11.printSchema()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 2. Save modes
 # MAGIC
-# MAGIC **`.mode(...)`** tells Spark what to do when the output already exists.
-# MAGIC A write operation such as **`.save(...)`** is an action. Spark executes
-# MAGIC the write when that operation runs.
+# MAGIC `.mode(...)` tells Spark what to do when the output already exists. 
+# MAGIC
+# MAGIC A write operation such as `.save(...)` is an action that triggers Spark execution.
 # MAGIC
 # MAGIC All four demos write to **`practice/write_modes_demo/`**. Run them in
 # MAGIC order so the row counts match.
@@ -162,9 +172,7 @@ print(f"After ignore:  {count_after_ignore} (unchanged when output already exist
 # MAGIC %md
 # MAGIC ### 2d. `errorifexists`
 # MAGIC
-# MAGIC Raise an error when the output already exists. Nothing is written.
-# MAGIC **`"error"`** is the same mode, and it is the default when you omit
-# MAGIC **`.mode(...)`**.
+# MAGIC Raise an error when the output already exists.
 
 # COMMAND ----------
 
@@ -182,20 +190,9 @@ except Exception as exc:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC | Mode | If the output already exists |
-# MAGIC |------|------------------------------|
-# MAGIC | **`overwrite`** | Replace the existing output |
-# MAGIC | **`append`** | Add more files; the row count grows |
-# MAGIC | **`ignore`** | Skip the write |
-# MAGIC | **`errorifexists`** / **`error`** | Raise an error (default) |
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 3. Partitioned write
 # MAGIC
-# MAGIC **`.partitionBy("hour_of_day")`** writes **`hour_of_day=<value>/`**
-# MAGIC subfolders under the output path, for example **`hour_of_day=8/`**.
+# MAGIC `.partitionBy("hour_of_day")` creates a separate subfolder for each distinct value in the `hour_of_day` column.
 
 # COMMAND ----------
 
@@ -211,13 +208,6 @@ display(dbutils.fs.ls(partitioned_path))
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC You should see folders named **`hour_of_day=<value>`**. Reading the parent
-# MAGIC folder returns all **100** rows, and Spark adds **`hour_of_day`** back
-# MAGIC from the folder names.
-
-# COMMAND ----------
-
 partitioned_read = spark.read.format("parquet").load(partitioned_path)
 
 print("Schema after partitioned read:")
@@ -230,13 +220,7 @@ partitioned_read.groupBy("hour_of_day").count().orderBy("hour_of_day").show(10)
 # MAGIC %md
 # MAGIC ## 4. Delta file write
 # MAGIC
-# MAGIC Write **`write_source`** with **`format("delta")`** to
-# MAGIC **`practice/trip_time_delta_file/`**, then read it back by path.
-# MAGIC ACID transactions, **`MERGE`**, and time travel are covered in a later
-# MAGIC Delta lesson.
-# MAGIC
-# MAGIC Module 5 still works with CSV, JSON, Parquet, XML, and Avro where those
-# MAGIC formats fit.
+# MAGIC Writing Delta files follows the same approach as Parquet and JSON. Only the format name changes
 
 # COMMAND ----------
 
@@ -261,18 +245,9 @@ delta_from_path.show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC In the folder listing, the data files are Parquet files, and
-# MAGIC **`_delta_log/`** sits next to them. You read this output by its Volume
-# MAGIC path, not by a table name.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 5. Managed table with `saveAsTable`
 # MAGIC
-# MAGIC Drop the table if it exists, so the cell can be re-run. Then create the
-# MAGIC managed table **`rideshare_dev.processed.trip_time_preview`** with
-# MAGIC **`saveAsTable`**.
+# MAGIC `saveAsTable` writes the DataFrame data and creates a managed table in Unity Catalog
 
 # COMMAND ----------
 
@@ -289,12 +264,6 @@ print(f"Created managed table {managed_table}")
 # COMMAND ----------
 
 display(spark.sql(f"DESCRIBE EXTENDED {managed_table}"))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Check **`Type`** and **`Location`**. **`Location`** should be the catalog
-# MAGIC managed location, not **`/Volumes/rideshare_dev/processed/output_files/...`**.
 
 # COMMAND ----------
 
@@ -320,19 +289,6 @@ spark.table(managed_table).show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC | | Delta files under `practice/` | Managed table from `saveAsTable` |
-# MAGIC |---|------------------------------|------------------------|
-# MAGIC | How you name it | Volume path | `catalog.schema.table` |
-# MAGIC | Where the files are stored | External volume `output_files` | Catalog managed location |
-# MAGIC | Who controls access | Unity Catalog volume privileges | Unity Catalog table privileges |
-# MAGIC
-# MAGIC Both use **`format("delta")`**. The difference is how you name the data
-# MAGIC and where the files are stored. Privileges are covered in a later Unity
-# MAGIC Catalog lesson.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **Save modes** — **`overwrite`**, **`append`**, **`ignore`**, and **`errorifexists`** decide what happens when the output already exists.
@@ -342,5 +298,5 @@ spark.table(managed_table).show(3)
 # MAGIC - **Files vs tables** — files are read by path; tables are read by name.
 # MAGIC
 # MAGIC **Next:** Module 6 **01 - Column Transforms with Built-in Functions**.
-# MAGIC Use **99 - Rideshare Project Cleanup and Reset** only to clear
-# MAGIC **`practice/`** or reset the project.
+# MAGIC
+# MAGIC Use notebook 99 - Rideshare Project Cleanup and Reset when you need to clear the practice/ folder or reset the project.

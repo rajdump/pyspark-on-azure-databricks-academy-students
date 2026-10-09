@@ -36,12 +36,13 @@ print(f"storage_credential = {storage_credential}")
 
 # This function deletes all files and folders inside a volume path.
 # It does NOT delete the volume itself — only its contents.
+# If the path cannot be listed, it prints the error and skips that path.
 
 def clear_volume_contents(volume_path: str) -> None:
     try:
         items = dbutils.fs.ls(volume_path)
-    except Exception:
-        print(f"  Path not found or empty: {volume_path}")
+    except Exception as e:
+        print(f"  Could not list {volume_path}: {e}")
         return
 
     for item in items:
@@ -62,8 +63,9 @@ def clear_volume_contents(volume_path: str) -> None:
 # MAGIC 4. Run **only that cell** (not the whole notebook)
 # MAGIC 5. Change the flag back to `False` when done
 # MAGIC
-# MAGIC > If you already ran this once and some steps show "not found", that's
-# MAGIC > normal — it means those items were already removed.
+# MAGIC > If you already ran this once and some steps show "Could not list" or
+# MAGIC > "not found", that's normal — it means those items were already removed.
+# MAGIC > Read the printed error to make sure it is not a permission problem.
 
 # COMMAND ----------
 
@@ -137,8 +139,11 @@ else:
 #   1. Delete files inside external volumes
 #   2. Drop the rideshare_dev catalog (and everything in it, including
 #      managed tables from saveAsTable previews)
-#   3. Drop the el_rideshare_dev external location
-#   4. Delete the ADLS project folder from storage
+#   3. Delete the ADLS project folder from storage
+#   4. Drop the el_rideshare_dev external location
+#
+# The ADLS folder is deleted before the external location is dropped,
+# because the external location gives Databricks access to that folder.
 #
 # What is NOT touched:
 #   - Storage credential named in the config cell (stays for reuse)
@@ -158,29 +163,27 @@ if FULL_PROJECT_TEARDOWN:
     spark.sql("DROP CATALOG IF EXISTS rideshare_dev CASCADE")
     print("  Done.")
 
-    print("\nStep 3: Dropping external location...")
-    spark.sql("DROP EXTERNAL LOCATION IF EXISTS el_rideshare_dev FORCE")
-    print("  Done.")
-
-    print(f"\nStep 4: Removing {adls_folder}/ folder from ADLS...")
+    print(f"\nStep 3: Removing {adls_folder}/ folder from ADLS...")
     try:
         dbutils.fs.rm(abfss_root, recurse=True)
         print("  Done.")
     except Exception as e:
-        if "LOCATION_OVERLAP" in str(e):
-            print("  Could not delete — Unity Catalog still protects this path.")
-            print("  Manual step: Azure Portal → Storage Account → Containers")
-            print(f"  → {container} → select '{adls_folder}' folder → Delete")
-        else:
-            print(f"  Error: {e}")
+        print(f"  Could not delete: {e}")
+        print("  Manual step: Azure Portal → Storage Account → Containers")
+        print(f"  → {container} → select '{adls_folder}' folder → Delete")
+
+    print("\nStep 4: Dropping external location...")
+    spark.sql("DROP EXTERNAL LOCATION IF EXISTS el_rideshare_dev FORCE")
+    print("  Done.")
 
     print("\n✓ Teardown complete. Run Notebook 01 from the top to rebuild.")
+    print(f"  Step 1 of Notebook 01 recreates the '{adls_folder}' folder in the Azure Portal.")
     print("\nRemember: set FULL_PROJECT_TEARDOWN back to False.")
 else:
     print("Skipped (FULL_PROJECT_TEARDOWN = False).")
     print("  Would drop: rideshare_dev catalog")
-    print("  Would drop: el_rideshare_dev external location")
     print(f"  Would delete: {adls_folder}/ folder in ADLS")
+    print("  Would drop: el_rideshare_dev external location")
     print(f"  Would NOT touch: {storage_credential} storage credential")
 
 # COMMAND ----------

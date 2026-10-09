@@ -2,32 +2,23 @@
 # MAGIC %md
 # MAGIC # 01 - Column Transforms with Built-in Functions
 # MAGIC
-# MAGIC Same transforms after load from a Volume path vs a managed table — no curated
-# MAGIC write.
-# MAGIC
-# MAGIC Landing **`trip_time`** Parquet and
-# MAGIC **`rideshare_dev.processed.trip_time_preview`**; also landing **`trip`**
-# MAGIC (and optional light **`payment`**).
+# MAGIC In the earlier modules, we learned how to create DataFrames and read and write
+# MAGIC data in different file formats. In this notebook, we apply Spark's built-in
+# MAGIC functions to transform DataFrame columns.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Apply string, numeric, date/time, and conditional `F.*` transforms
-# MAGIC - Load the same logical dataset from a Volume path and a managed table, then
-# MAGIC   apply identical chains after load
+# MAGIC - Apply string, numeric, date, and conditional built-in functions
+# MAGIC - Load the same dataset from a Volume path and a managed table, then apply the
+# MAGIC   same transformations to both
+
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Import Spark's built-in functions as **`F`**, then define the source paths and
-# MAGIC managed table used below.
-# MAGIC
-# MAGIC | Dataset | Source | Columns used |
-# MAGIC |---|---|---|
-# MAGIC | `trip` | Landing CSV | `service_type`, distance, and duration columns |
-# MAGIC | `trip_time` | Landing Parquet | `trip_id`, `trip_date`, `hour_of_day` |
-# MAGIC | `trip_time` | Managed table | Same three columns as landing Parquet |
-# MAGIC | `payment` | Landing Avro | Payment method and decimal amount columns |
+# MAGIC Import Spark's built-in functions and define the paths and table name used in
+# MAGIC this notebook.
 
 # COMMAND ----------
 
@@ -49,33 +40,19 @@ print(f"trip_time_table = {trip_time_table}")
 # MAGIC %md
 # MAGIC ## 1. Built-in functions create Column expressions
 # MAGIC
-# MAGIC A regular Python function like `str.upper()` processes **one value at a time**
-# MAGIC in your driver process. Spark built-in functions work differently:
+# MAGIC Spark's built-in functions create Column expressions that describe
+# MAGIC transformations on DataFrame columns. These expressions become part of the
+# MAGIC logical plan and are evaluated during execution.
 # MAGIC
-# MAGIC | | Python function | Spark built-in (`F.*`) |
-# MAGIC |---|---|---|
-# MAGIC | **What it produces** | A computed value | A **Column expression** (a plan node) |
-# MAGIC | **When it runs** | Immediately | Only when an action triggers execution |
-# MAGIC | **Where it runs** | Driver (single machine) | Executors (distributed, JVM-optimized) |
-# MAGIC | **Optimizer visibility** | Opaque | Full — Spark can reorder, prune, or fuse |
-# MAGIC
-# MAGIC When you write `F.upper(F.col("service_type"))`, nothing executes yet. Spark
-# MAGIC records the instruction in the DataFrame's **logical plan** and evaluates it
-# MAGIC across all partitions when an action (`.show()`, `.collect()`, or a terminal
-# MAGIC write method such as `.write.parquet()`) runs.
-# MAGIC
-# MAGIC > **Module production rule:** use built-ins first. They keep the optimizer
-# MAGIC > informed, avoid Python-per-row overhead, and compose cleanly.
+# MAGIC In the following examples, we use built-in functions to transform dates,
+# MAGIC strings, and numeric values.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Load `trip_time` from two source types
+# MAGIC ## 2. Load `trip_time` from two sources
 # MAGIC
-# MAGIC A Volume path identifies files. A three-part table name identifies a Unity
-# MAGIC Catalog table. The load syntax changes, but both operations return a DataFrame.
-# MAGIC
-# MAGIC First, read the landing Parquet file with the documented schema.
+# MAGIC Load the `trip_time` dataset from the landing Volume using an explicit schema.
 
 # COMMAND ----------
 
@@ -86,7 +63,7 @@ hour_of_day int
 """
 
 trip_time_from_volume = (
-    spark.read.format("parquet")  # noqa: F821
+    spark.read.format("parquet")
     .schema(trip_time_schema_ddl)
     .load(trip_time_parquet_path)
 )
@@ -98,16 +75,12 @@ trip_time_from_volume.show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Now load the managed table with **`spark.table`**. The table created in Module 5
-# MAGIC contains the same logical `trip_time` dataset.
-# MAGIC
-# MAGIC Reference: Module 5 notebook
-# MAGIC **`07 - Write Patterns and Table Preview`**, section
-# MAGIC **`## 5 cell runs `saveAsTable(managed_table)`**).
+# MAGIC Now load the same dataset from the managed table created in Module 5,
+# MAGIC **07 - Write Patterns and Table Preview**.
 
 # COMMAND ----------
 
-trip_time_from_table = spark.table(trip_time_table)  # noqa: F821
+trip_time_from_table = spark.table(trip_time_table)
 
 print("Managed-table DataFrame:")
 trip_time_from_table.printSchema()
@@ -118,19 +91,11 @@ trip_time_from_table.show(3)
 # MAGIC %md
 # MAGIC ## 3. Apply the same transformations after either load
 # MAGIC
-# MAGIC The expressions below add:
-# MAGIC
-# MAGIC - **`trip_year`** and **`trip_month`** from `trip_date`
-# MAGIC - **`trip_day_name`** as a readable weekday name
-# MAGIC - **`day_part`** from `hour_of_day`
-# MAGIC
-# MAGIC **`F.when(...).when(...).otherwise(...)`** is Spark's Column-expression form
-# MAGIC for ordered conditional rules. Spark checks each condition from top to bottom
-# MAGIC and uses the first match.
+# MAGIC Apply built-in functions to create `trip_year`, `trip_month`, `trip_day_name`,
+# MAGIC and `day_part` from the existing `trip_time` columns.
 
 # COMMAND ----------
 
-# Apply transforms directly — see each expression in action
 trip_time_volume_inline = trip_time_from_volume.select(
     F.col("trip_id"),
     F.col("trip_date"),
@@ -153,18 +118,15 @@ trip_time_volume_inline.show(5, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Production pattern: extract and reuse.** The inline approach above is
-# MAGIC clear, but what if you load the same dataset from multiple sources (a file
-# MAGIC today, a table tomorrow)? Copy-pasting the same expressions violates DRY
-# MAGIC (Don't Repeat Yourself).
+# MAGIC The previous example applies the expressions directly inside `.select()`. To
+# MAGIC avoid repeating them for both DataFrames, store the expressions in a Python
+# MAGIC list and reuse them.
 # MAGIC
-# MAGIC **Solution:** store the expressions in a Python list, then unpack with `*` into
-# MAGIC `.select()`. The list is just a plain `list[Column]` — Spark doesn't know about
-# MAGIC it; it's purely a Python convenience.
+# MAGIC The `*` operator unpacks the list and passes each Column expression to
+# MAGIC `.select()`.
 
 # COMMAND ----------
 
-# Extract the same expressions into a reusable list
 trip_time_transformations = [
     F.col("trip_id"),
     F.col("trip_date"),
@@ -181,7 +143,6 @@ trip_time_transformations = [
     ),
 ]
 
-# Apply the SAME list to both sources — one list, two loads, zero duplication
 trip_time_volume_transformed = trip_time_from_volume.select(*trip_time_transformations)
 trip_time_table_transformed = trip_time_from_table.select(*trip_time_transformations)
 
@@ -194,19 +155,10 @@ trip_time_table_transformed.show(5, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Both results have identical columns — the same list drove both. In production,
-# MAGIC only the load line changes per source; the transformation logic stays in one place.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 4. Load `trip` with its explicit schema
 # MAGIC
-# MAGIC The `trip` CSV does not store type metadata. Reuse the explicit schema pattern
-# MAGIC from Module 5 so numeric columns arrive as numeric types.
-# MAGIC
-# MAGIC The dataset has **no date columns**. Its examples therefore focus on strings,
-# MAGIC numeric/decimal values, and conditional rules.
+# MAGIC Load the `trip` CSV using an explicit schema. We will use this DataFrame for
+# MAGIC string, numeric, and conditional transformations.
 
 # COMMAND ----------
 
@@ -222,7 +174,7 @@ driver_arrival_to_pickup_mins int
 """
 
 trip = (
-    spark.read.format("csv")  # noqa: F821
+    spark.read.format("csv")
     .option("header", "true")
     .schema(trip_schema_ddl)
     .load(trip_csv_path)
@@ -236,15 +188,8 @@ trip.show(3, truncate=False)
 # MAGIC %md
 # MAGIC ## 5. String transformations
 # MAGIC
-# MAGIC Consistent text labels prevent values that mean the same thing from being
-# MAGIC treated as different categories.
-# MAGIC
-# MAGIC - **`F.trim`** removes leading and trailing spaces.
-# MAGIC - **`F.upper`** changes text to uppercase.
-# MAGIC - **`F.concat_ws`** combines values with a separator.
-# MAGIC
-# MAGIC The landing values may already be clean. The same expressions still document
-# MAGIC the expected output format.
+# MAGIC Apply `F.trim()`, `F.upper()`, and `F.concat_ws()` to standardize
+# MAGIC `service_type` and create a new `service_label` column.
 
 # COMMAND ----------
 
@@ -264,40 +209,10 @@ trip_strings.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `service_type_standardized` makes comparisons reliable by removing extra spaces
-# MAGIC and normalizing case (for example, `Premium`, ` premium `, and `PREMIUM` become
-# MAGIC the same value).
-# MAGIC `service_label` creates a readable tagged value such as `SERVICE-PREMIUM`,
-# MAGIC which is useful for display, quick filtering, and grouped summaries.
-# MAGIC It also shows function composition: output from **`F.trim`** feeds
-# MAGIC **`F.upper`**, then **`F.concat_ws`** builds the final label.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 6. Numeric and decimal transformations
+# MAGIC ## 6. Numeric transformations
 # MAGIC
-# MAGIC Built-in numeric functions let us create useful metrics.
-# MAGIC
-# MAGIC We will use these three time columns from `trip`:
-# MAGIC
-# MAGIC | Column | Plain meaning |
-# MAGIC |---|---|
-# MAGIC | `request_to_pickup_mins` | Wait from request until pickup, including boarding |
-# MAGIC | `driver_arrival_to_pickup_mins` | Driver waits at pickup spot until passenger boards |
-# MAGIC | `ride_duration_mins` | Time in the car from pickup to destination |
-# MAGIC
-# MAGIC These represent different parts of one trip timeline, so each subtraction
-# MAGIC answers a different question:
-# MAGIC
-# MAGIC | Derived column | Meaning |
-# MAGIC |---|---|
-# MAGIC | `request_to_driver_arrival_mins` | Time to reach pickup, excluding boarding |
-# MAGIC | `ride_minus_wait_to_pickup_mins` | Negative when pickup wait exceeds ride duration |
-# MAGIC | `ride_wait_to_pickup_gap_mins` | Absolute gap size regardless of sign (always >= 0) |
-# MAGIC
-# MAGIC In this cell we also convert miles to kilometers with multiplication and
-# MAGIC round to 2 decimals using `F.round`.
+# MAGIC Use arithmetic operations, `F.round()`, and `F.abs()` to derive new columns
+# MAGIC from the trip's distance and time measurements.
 
 # COMMAND ----------
 
@@ -329,14 +244,8 @@ trip_metrics.show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## 7. Conditional transformations
 # MAGIC
-# MAGIC Conditional columns turn numeric measurements into business-friendly labels.
-# MAGIC The following rule groups rides by duration:
-# MAGIC
-# MAGIC - Less than 15 minutes → `short`
-# MAGIC - 15 to 29 minutes → `medium`
-# MAGIC - 30 minutes or more → `long`
-# MAGIC
-# MAGIC The boundaries do not overlap because **`F.when`** checks them in order.
+# MAGIC Use `F.when()` and `.otherwise()` to create `ride_duration_band`, categorizing
+# MAGIC rides as `short`, `medium`, or `long` based on duration.
 
 # COMMAND ----------
 
@@ -356,21 +265,10 @@ trip_duration_bands.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Common mistake:** omitting **`.otherwise(...)`** leaves unmatched rows as
-# MAGIC `NULL`. Use that intentionally only when `NULL` is the required result.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 8. Light decimal examples with `payment`
+# MAGIC ## 8. Decimal calculations with `payment`
 # MAGIC
-# MAGIC The landing `payment` dataset is Avro, so it carries its schema. An explicit
-# MAGIC schema keeps the expected decimal types visible in the read contract.
-# MAGIC
-# MAGIC This example calculates:
-# MAGIC
-# MAGIC - **`charge_before_tip`** from base fare, surge, tax, and discount
-# MAGIC - **`tip_percent_of_base`** only when the base fare is greater than zero
+# MAGIC Load the `payment` Avro dataset using the expected schema. Calculate
+# MAGIC `charge_before_tip` and `tip_percent_of_base` using the decimal amount columns.
 
 # COMMAND ----------
 
@@ -386,7 +284,7 @@ driver_payout_amount decimal(10,2)
 """
 
 payment = (
-    spark.read.format("avro")  # noqa: F821
+    spark.read.format("avro")
     .schema(payment_schema_ddl)
     .load(payment_avro_path)
 )
@@ -427,31 +325,10 @@ payment_amounts.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The condition prevents division by zero. If the base fare is zero or `NULL`,
-# MAGIC `tip_percent_of_base` is `NULL`, which signals that the percentage could not be
-# MAGIC calculated.
-# MAGIC
-# MAGIC These results remain DataFrames in this notebook. There is no curated write:
-# MAGIC Module 6 **`03 - Cleaning and Curated Outputs`** owns persisted enrichment and
-# MAGIC cleaning columns.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Built-in functions** create Spark Column expressions that Spark can
-# MAGIC   understand and optimize.
-# MAGIC - **Source loading is separate from transformation logic.** A Volume path and
-# MAGIC   a managed table use different load syntax but both return DataFrames.
-# MAGIC - The same expression list added date, calendar, and day-part columns after
-# MAGIC   either `trip_time` load.
-# MAGIC - **`trip`** demonstrated string, numeric/decimal, and conditional transforms;
-# MAGIC   its schema has no date columns.
-# MAGIC - **`payment`** provided a light decimal calculation with a division guard.
-# MAGIC - This notebook created no persisted output. Module 6
-# MAGIC   **`03 - Cleaning and Curated Outputs`** will re-read landing data before
-# MAGIC   writing curated datasets.
+# MAGIC - Applied Spark built-in functions to date, string, numeric, and decimal columns.
+# MAGIC - Reused the same Column expressions across DataFrames loaded from different sources.
+# MAGIC - Created derived columns using arithmetic and conditional expressions.
 # MAGIC
-# MAGIC **Next:** Module 6 **`02 - Complex Types: Structs, Arrays, and explode`** —
-# MAGIC access nested struct fields, work with arrays, and flatten assigned trips.
+# MAGIC **Next:** `02 - Complex Types, Structs, Arrays, and explode`

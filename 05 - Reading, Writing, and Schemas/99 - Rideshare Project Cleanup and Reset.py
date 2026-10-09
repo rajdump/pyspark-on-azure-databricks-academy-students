@@ -186,9 +186,3 @@ else:
     print(f"  Would delete: {adls_folder}/ folder in ADLS")
     print("  Would drop: el_rideshare_dev external location")
     print(f"  Would NOT touch: {storage_credential} storage credential")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Next:** `01 - Unity Catalog Volumes and Data Landing` (recovery returns
-# MAGIC to the workflow that invokes this notebook).

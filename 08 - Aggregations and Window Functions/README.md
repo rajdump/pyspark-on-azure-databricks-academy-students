@@ -37,8 +37,9 @@ owns the shared setup description; later notebooks load without re-describing
 it.
 
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
-Module 7 `02 - Silent Join Failures and Validation.py` (`Window` +
-`row_number` dedup — revisited in **05**; Top-N reuses the pattern in **07**).
+Module 7 `02 - Join Cardinality, NULL Keys, and Cross Joins.py` (grain and key
+profiling). `Window` + `row_number` dedup is introduced in **05**; Top-N
+reuses the pattern in **07**.
 
 Does **not** read `/Volumes/rideshare_dev/processed/output_files/practice/`
 or Module 6 `/Volumes/rideshare_dev/processed/output_files/curated/` — the

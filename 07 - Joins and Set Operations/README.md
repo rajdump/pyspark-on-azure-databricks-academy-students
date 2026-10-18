@@ -10,13 +10,14 @@ columns after a dimension lookup).
 
 By the end of this module, you'll be able to:
 
-- Define **grain** and **cardinality** (1:1, 1:M, M:1, M:M) and predict join
-  row counts before running
 - Write equi-joins in **string**, **list**, and **Boolean** form
-- Choose **inner / left / right / full** and explain NULL-key behavior
-  (`NULL = NULL` is not true; use **`eqNullSafe`** when NULLs must match)
-- Profile keys (`rows`, `countDistinct`, nulls) and resolve duplicates with
-  **`Window` + `row_number`** (not `dropDuplicates`) when payloads differ
+- Choose **inner / left / right / full** joins for matched and unmatched keys
+- Define **grain** and **cardinality** (1:1, 1:M, M:1, M:M) and explain join
+  row counts, including row multiplication from repeated keys
+- Profile keys (`rows`, `countDistinct`, nulls) before joining, explain
+  why `NULL` keys do not match (`NULL = NULL` is not true), and use
+  **`eqNullSafe`** when `NULL` keys must match
+- Explain **`crossJoin`** and an always-true join condition
 - Run a **repeated lookup join** (`zone_lookup` for pickup and dropoff),
   clean columns with **`select` / rename**, and **`F.broadcast`** a small
   dimension (confirm in **`.explain()`**)
@@ -84,59 +85,77 @@ managed tables. To reset Module 7 managed tables (**`trip_enriched`**,
 CASCADE` step drops every managed table in the catalog, current and future,
 with no per-table statement required.
 
-## Notebook 01 — Grain, Join Syntax, and Unmatched Keys
+## Notebook 01 — Introduction to PySpark Joins
 
 ### Context
 
-Grain, cardinality, and join syntax — skill-building only (no write).
+Join syntax and join types on two small constructed DataFrames —
+skill-building only (no write).
 
 ### Learning objectives
 
-- Define grain and cardinality and predict join row counts before running
-- Write equi-joins in string, list, and Boolean form
+- Write a join with `df1.join(df2, on, how)`
+- Write the join condition as a string, a list, or a Boolean expression
+- Compare inner, left, right, and full joins when keys are unmatched
 
 ### Lesson flow
 
-Grain; 1:1 / 1:M / M:M; string join `trip`↔`trip_time` → 100; list join
-`trip_charges`↔`rate_card` (`trip_id` alone → 12 wrong; `["trip_id",
-"charge_type"]` → 4); Boolean rename + duplicate-column trap.
+Two constructed frames with `drivers_flat` columns: `driver_trips`
+(D001/8, D002/4) and `driver_trip_details` (D001/8, D002/5).
+Single-column join on `trip_id` in string and Boolean form → 1 row each;
+multi-column join on `driver_id` + `trip_id` in list and Boolean form →
+1 row each; inner / left / right / full on the list form → 1, 2, 2, 3 rows.
 
 ### Expected state
 
-- Input: landing `trip`, `trip_time` (+ constructed frames). No `payment`.
+- Input: constructed frames only (no file reads)
 - Output: none (no write)
 
 ### Next
 
-`02 - Silent Join Failures and Validation`
+`02 - Join Cardinality, NULL Keys, and Cross Joins`
 
-## Notebook 02 — Silent Join Failures and Validation
+## Notebook 02 — Join Cardinality, NULL Keys, and Cross Joins
 
 ### Context
 
-M:M fanout, key profiling, and NULL-key traps — still no write.
+How many rows a join returns, and why — skill-building only (no write).
 
 ### Learning objectives
 
-- Profile keys and resolve duplicates with `Window` + `row_number` (not
-  `dropDuplicates`) when payloads differ
-- Explain NULL-key behavior and use `eqNullSafe` when NULLs must match
+- Identify 1:1, 1:M, M:1, and M:M joins
+- Explain why a join can return more rows than either input DataFrame
+- Check join keys for repeated and `NULL` values before joining
+- Explain why `NULL` join keys do not match, and match them with `eqNullSafe`
+- Explain how a cross join pairs every row with every row
 
 ### Lesson flow
 
-M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys +
-`eqNullSafe`; accidental Cartesian; profile → predict → run → verify.
+Three constructed frames used throughout: `drivers` (D001, D002),
+`driver_trips` (D001: 8, 25, 43; D002: 4, 5; `NULL`: 101), and `trips`
+(`trip_id`, `service_type`, `pickup_location_id` for the same six trips).
+Grain and cardinality: 1:1 `driver_trips` ↔ `trips` on `trip_id` → 6 rows;
+1:M `drivers` ↔ `driver_trips` → 5 rows; M:1 reversed → 5 rows; M:M
+relationship between drivers and pickup zones, shown by joining `drivers`
+→ `driver_trips` → `trips` and selecting `driver_name`,
+`pickup_location_id` → 5 rows (Ravi Kumar: zones 1, 8, 9; zone 8: both
+drivers). Key profiling with `count("*")`, `countDistinct`,
+`NULL` count (2/2/0 vs 6/2/1). `NULL` keys: ad hoc
+`drivers_with_unknown` (D001, D002, `NULL` "Unknown") joined to
+`driver_trips`: `==` → 5 rows, `eqNullSafe` → 6 rows (trip 101 matches
+"Unknown"). `crossJoin` of drivers and distinct service types →
+2 × 3 = 6-row grid.
 
 ### Expected state
 
-- Input: landing `trip`, `trip_time`, `payment` (+ frames)
+- Input: constructed frames only (no file reads)
 - Output: none (no write)
 
 ### Next
 
-`03 - Lookup Joins, Columns, and Broadcast`
+`03 - Sort-Merge Join vs Broadcast Hash Join`
 
-## Notebook 03 — Lookup Joins, Columns, and Broadcast
+## Notebook 03 — Sort-Merge Join vs Broadcast Hash Join
 
 ### Context
 
@@ -151,7 +170,7 @@ Repeated zone lookup, column cleanup, and broadcast — reused in notebook
 
 ### Lesson flow
 
-Apply **01–02** join/alias/profile patterns (no re-teach); fact vs dim;
+Apply **01–02** join and key-profiling patterns (no re-teach); fact vs dim;
 repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**;
 `-1` threshold then `F.broadcast` + `.explain()` (reused in **07**).
 
@@ -276,7 +295,7 @@ Module 8 — Aggregations and Window Functions.
   - **`USE SCHEMA`** on **`rideshare_dev.landing`** and **`rideshare_dev.processed`**
   - **`READ VOLUME`** on **`rideshare_dev.landing.source_files`**
   - **`READ VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (curated Parquet — `03 - Lookup Joins, Columns, and Broadcast.py`,
+    (curated Parquet — `03 - Sort-Merge Join vs Broadcast Hash Join.py`,
     `04 - Semi Joins and Anti Joins.py`,
     `07 - Build Unified Curated Tables.py`)
   - **`CREATE TABLE`** on **`rideshare_dev.processed`**

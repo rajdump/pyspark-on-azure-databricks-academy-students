@@ -1,239 +1,134 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 04 - Semi Joins and Anti Joins
 # MAGIC
-# MAGIC `left_semi` / `left_anti` on curated trip vs payment.
+# MAGIC A semi join keeps the left rows that have a match on the right. 
 # MAGIC
-# MAGIC Curated `trip/` (106), curated `payment/` (105).
+# MAGIC An anti join keeps the left rows that have no match. Both return only the left DataFrame's columns.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Use `left_semi` / `left_anti`, and contrast anti-join with `subtract()`
-# MAGIC   (bridge to **06**)
+# MAGIC - Use `left_semi` to keep left rows that have at least one match on the right.
+# MAGIC - Use `left_anti` to find left rows with no match on the right.
+# MAGIC - Confirm that the combined row counts from left_semi and left_anti equal the left DataFrame's row count.
+# MAGIC - Explain how swapping the left and right DataFrames changes which unmatched keys you find.
+# MAGIC - Compare `left_anti` with `subtract()`.
+
 # COMMAND ----------
 
-# DBTITLE 1,Setup
 # MAGIC %md
-# MAGIC ## Setup — load curated trip and payment
+# MAGIC ## 1. Setup and source data
 # MAGIC
-# MAGIC | Table | Format | Grain | Key | Rows | Used in |
-# MAGIC |---|---|---|---|---|---|
-# MAGIC | `curated/trip` | Parquet | one completed trip | `trip_id` | 106 | Sections 1–4 |
-# MAGIC | `curated/payment` | Parquet | one fare record per trip | `trip_id` | 105 | Sections 1–2 |
-# MAGIC | Landing `trip_time` | Parquet | one time record per trip | `trip_id` | 100 | Practice (Section 3 only) |
+# MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC `curated/payment` has 105 rows — one fewer than `curated/trip`. Trip 106
-# MAGIC exists in trip but has no payment record. That gap drives the anti-join
-# MAGIC demo in Section 2.
-# MAGIC
-# MAGIC Trips 101–106 have no record in `trip_time` (which covers only the original
-# MAGIC 100 trips). That 6-row gap drives the Section 3 practice.
+# MAGIC - `trip` contains 106 rows, with one completed trip per `trip_id`.
+# MAGIC - `payment` contains 105 rows, with one fare record per `trip_id`. Trip 106 has no matching payment record.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load curated trip, payment, and landing trip_time
 curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
-landing_root = "/Volumes/rideshare_dev/landing/source_files"
 
 trip = spark.read.format("parquet").load(f"{curated_root}/trip")  # noqa: F821
 payment = spark.read.format("parquet").load(f"{curated_root}/payment")  # noqa: F821
-trip_time = spark.read.format("parquet").load(  # noqa: F821
-    f"{landing_root}/trip_time/trip_time.parquet"
-)
 
 print("trip rows:", trip.count())
 print("payment rows:", payment.count())
-print("trip_time rows:", trip_time.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,1. left_semi
 # MAGIC %md
-# MAGIC ## 1. `left_semi` — keep trips that have a payment
+# MAGIC ## 2. Left Semi Join
 # MAGIC
-# MAGIC **Question:** which of the 106 trips already have a payment record?
+# MAGIC `left_semi` returns rows from `trip` that have at least one matching row in `payment`.
+# MAGIC Each matching row from `trip` appears once, regardless of how many payment rows match.
+# MAGIC The result contains only columns from `trip`.
 
 # COMMAND ----------
 
-# DBTITLE 1,1. Run left_semi and verify
 trips_with_payment = trip.join(payment, "trip_id", "left_semi")
 
-print("left_semi row count:", trips_with_payment.count())
-trips_with_payment.show(1, truncate=False, vertical=True)
+print("left_semi rows:", trips_with_payment.count())
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The key difference from an inner join: **semi returns only left-side
-# MAGIC columns**. No payment columns appear in the result.
+# MAGIC ### Compare with an inner join
+# MAGIC
+# MAGIC Both joins return 105 rows in this example because each trip has at most one matching payment row.
+# MAGIC An inner join also includes columns from `payment`, so it returns 22 columns compared with 13 for `left_semi`.
+# MAGIC If a trip had two matching payment rows, the inner join would return that trip twice, while `left_semi` would return it once.
 
 # COMMAND ----------
 
-# DBTITLE 1,1. Contrast with inner join column count
 inner_result = trip.join(payment, "trip_id", "inner")
 
-print(f"inner join: {inner_result.count()} rows, {len(inner_result.columns)} columns")
+print("inner join rows:", inner_result.count(), "columns:", len(inner_result.columns))
 
-print(f"left_semi:  {trips_with_payment.count()} rows, {len(trips_with_payment.columns)} columns")
-
-print(f"\n\u2192 Same qualifying rows, but semi keeps only the {len(trip.columns)} trip columns")
+print("left_semi rows:",trips_with_payment.count(),"columns:",len(trips_with_payment.columns),)
 
 # COMMAND ----------
 
-# DBTITLE 1,2. left_anti
 # MAGIC %md
-# MAGIC ## 2. `left_anti` — find trips without a payment
+# MAGIC ## 3. Left Anti Join
 # MAGIC
-# MAGIC **Question:** which trips have no payment record at all?
+# MAGIC `left_anti` returns rows from `trip` that have no matching row in `payment`. In this example, trip 106 has no payment.
 # MAGIC
-# MAGIC **Production use cases:**
-# MAGIC - **Completeness audits** — find orders without shipments, users without logins
-# MAGIC - **Incremental loads** — identify new records that haven't been processed yet
-# MAGIC - **Orphan detection** — fact rows referencing deleted dimension keys
+# MAGIC Every trip appears in either the `left_semi` or `left_anti` result, but not both.
+# MAGIC
+# MAGIC Therefore, the combined row counts from both joins equal the total row count of `trip`.
 
 # COMMAND ----------
 
-# DBTITLE 1,2. Run left_anti and verify
 trips_without_payment = trip.join(payment, "trip_id", "left_anti")
 
-print("left_anti row count:", trips_without_payment.count())
+trips_without_payment.select("trip_id").show()
 
-# Verify: semi + anti must account for every row in the driving table
 semi_count = trips_with_payment.count()
-
-print("\nPayment missing for this trip:")
-trips_without_payment.show(2, truncate=False, vertical=True)
-
 anti_count = trips_without_payment.count()
-print(f"Verify: semi({semi_count}) + anti({anti_count}) = {semi_count + anti_count} == trip.count({trip.count()})")
+
+print(f"semi ({semi_count}) + anti ({anti_count}) = {semi_count + anti_count}")
+print("trip rows:", trip.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,2c. Reverse anti
 # MAGIC %md
-# MAGIC ### 2c. Reverse anti — flip the driving side
+# MAGIC ## 4. Anti Join vs `subtract()`
 # MAGIC
-# MAGIC Same two tables, different question: are there any payments that have **no
-# MAGIC matching trip**?
+# MAGIC `subtract()` can also find trip IDs with no matching payment. It is a set operation, not a join.
+# MAGIC
+# MAGIC Here, we select `trip_id` from both DataFrames because `subtract()` compares all columns in its input.
+# MAGIC
+# MAGIC Both operations identify trip 106, but they differ in two ways:
+# MAGIC
+# MAGIC | | `left_anti` | `subtract()` |
+# MAGIC |---|---|---|
+# MAGIC | Columns returned in this example | All `trip` columns | Only `trip_id` |
+# MAGIC | Duplicate rows | Keeps duplicate left rows | Removes duplicates |
+# MAGIC
+# MAGIC The duplicate difference is not visible here because each `trip_id` appears once in `trip`.
+# MAGIC
+# MAGIC Set operations continue in notebook 06.
 
 # COMMAND ----------
 
-# DBTITLE 1,2c. Reverse anti — payments without a trip
-payments_without_trip = payment.join(trip, "trip_id", "left_anti")
-
-print("Payments without a matching trip:", payments_without_trip.count(), "rows")
-
-# COMMAND ----------
-
-# DBTITLE 1,3. Practice
-# MAGIC %md
-# MAGIC ## 3. Practice — a second intentional gap (trip_time)
-# MAGIC
-# MAGIC Landing `trip_time` has 100 rows covering trip_ids 1–100. The curated trip
-# MAGIC table has 106 rows (trip_ids 1–106). Trips 101–106 were added during Module 6
-# MAGIC cleaning and have **no time record**.
-# MAGIC
-# MAGIC **Your task:** apply semi and anti joins to this second pair using Boolean
-# MAGIC form with aliases (Notebook 01 Section 3.3).
-# MAGIC
-# MAGIC | Join | Driving side | Right side | Predicted rows |
-# MAGIC |---|---|---|---|
-# MAGIC | `left_semi` | `trip` (106) | `trip_time` (100) | ? |
-# MAGIC | `left_anti` | `trip` (106) | `trip_time` (100) | ? |
-
-# COMMAND ----------
-
-# DBTITLE 1,3. Practice - left_semi on trip_time
-# TODO (practice): Write a left_semi join from `trip` to `trip_time`
-# using Boolean form with aliases.
-#
-# Steps:
-#   1. Alias trip as "t" and trip_time as "tt"
-#   2. Join: t.join(tt, <Boolean condition>, "left_semi")
-#   3. Print the count — does it match your prediction?
-
-
-# COMMAND ----------
-
-# DBTITLE 1,3b. Now find what's missing
-# MAGIC %md
-# MAGIC ### Now find what’s missing
-# MAGIC
-# MAGIC Predict before running: how many trips have **no** time record? Which
-# MAGIC trip_ids are they?
-
-# COMMAND ----------
-
-# DBTITLE 1,3. Practice - left_anti on trip_time
-# TODO (practice): Write a left_anti join from `trip` to `trip_time`
-# using Boolean form with aliases.
-#
-# Steps:
-#   1. Alias trip as "t" and trip_time as "tt"
-#   2. Join: t.join(tt, <Boolean condition>, "left_anti")
-#   3. Print the count and display the trip_ids
-#   4. Also confirm: semi count + anti count = 106
-
-
-# COMMAND ----------
-
-# DBTITLE 1,4. Bridge to subtract()
-# MAGIC %md
-# MAGIC ## 4. Bridge to `subtract()`
-# MAGIC
-# MAGIC `subtract()` returns rows from the first DataFrame that do not appear in the second DataFrame. It compares all columns in the DataFrames passed to it.
-# MAGIC
-# MAGIC Therefore, use `select()` on both sides when you want to compare only specific columns.
-# MAGIC
-# MAGIC ```python
-# MAGIC trip.select("trip_id").subtract(
-# MAGIC     payment.select("trip_id")
-# MAGIC )
-# MAGIC ```
-# MAGIC
-# MAGIC Here, Spark compares only `trip_id` because that is the only column present after the projection.
-# MAGIC
-# MAGIC Unlike `left_anti`, `subtract()` removes duplicate results.
-# MAGIC
-# MAGIC
-
-# COMMAND ----------
-
-# DBTITLE 1,4. subtract on trip_id — same result as anti-join
 subtract_result = trip.select("trip_id").subtract(payment.select("trip_id"))
 
-print("subtract on trip_id:", subtract_result.count(), "row(s)")
+print("subtract on trip_id:", subtract_result.count())
 subtract_result.show()
 
 # COMMAND ----------
 
-# DBTITLE 1,Summary
 # MAGIC %md
-# MAGIC ## Summary
+# MAGIC ## 5. Key Takeaway
 # MAGIC
-# MAGIC 1. **`left_semi`** keeps left rows for which a match exists on the right.
-# MAGIC    No right-side columns appear.
+# MAGIC - `left_semi` returns left rows that have at least one match on the right, without duplicating them based on right-side matches.
+# MAGIC - `left_anti` returns left rows that have no match on the right.
+# MAGIC - Both joins return only columns from the left DataFrame.
+# MAGIC - The combined row counts from `left_semi` and `left_anti` equal the left DataFrame's row count when using the same join condition.
+# MAGIC - `subtract()` returns distinct unmatched rows based on the selected columns, while `left_anti` preserves duplicate left rows.
 # MAGIC
-# MAGIC 2. **`left_anti`** keeps left rows for which no match exists on the right.
-# MAGIC    The result also contains only left-side columns.
-# MAGIC
-# MAGIC 3. **Direction matters** — the left DataFrame is always the driving side.
-# MAGIC    Swapping which DataFrame is left changes which gaps you detect.
-# MAGIC
-# MAGIC 4. **Exhaustive-split check** — when both joins use the same key:
-# MAGIC
-# MAGIC    ```text
-# MAGIC    semi count + anti count = left DataFrame count
-# MAGIC    ```
-# MAGIC
-# MAGIC    Every left row appears in exactly one of the two results.
-# MAGIC
-# MAGIC 5. **Anti join and `subtract()` overlap but differ:**
-# MAGIC
-# MAGIC    * `left_anti` evaluates a join key and preserves duplicate left rows.
-# MAGIC    * `subtract()` compares all selected columns and returns only distinct
-# MAGIC      rows.
-# MAGIC
-# MAGIC    Full set-operation coverage → Notebook 06.
-# MAGIC
-# MAGIC **Next:** **`05 - Union and unionByName`**
+# MAGIC **Next:** `05 - Union and unionByName`

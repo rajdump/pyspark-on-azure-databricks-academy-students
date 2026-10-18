@@ -2,85 +2,86 @@
 # MAGIC %md
 # MAGIC # 04 - Built-ins First, When (Not) to Use UDFs
 # MAGIC
-# MAGIC Built-ins as default; Python UDF contrast only — do not overwrite curated
-# MAGIC outputs.
-# MAGIC
-# MAGIC A small column-rule demo (not a curated overwrite).
+# MAGIC In this notebook, we apply the same labelling rule to the curated `payment`
+# MAGIC data twice: once with built-in functions and once with a Python UDF.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Explain when to prefer built-ins over Python UDFs (and when Pandas/Arrow UDFs
-# MAGIC   exist as an advanced fallback outside this course)
+# MAGIC - Write a labelling rule with `F.when`
+# MAGIC - Write the same rule as a Python UDF with `F.udf`
+# MAGIC - Handle `NULL` values in built-in expressions and Python UDFs
+# MAGIC - Explain how Spark runs built-in functions and Python UDFs differently
+# MAGIC - Decide when a Python UDF is the right choice
+
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup
+# MAGIC ## 1. Setup and source data
 # MAGIC
-# MAGIC Read the curated `trip` and `payment` outputs written in Module 6
-# MAGIC **`03 - Cleaning and Curated Outputs`**. Use `format("parquet").load(...)` — the
-# MAGIC same recommended read pattern as Notebook 03 — rather than the `.parquet(path)`
-# MAGIC shorthand.
+# MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC | Dataset | Source | Grain |
-# MAGIC |---|---|---|
-# MAGIC | `trip` | `…/curated/trip/` | 106 rows; one row per `trip_id` |
-# MAGIC | `payment` | `…/curated/payment/` | 105 rows; one row per `trip_id` |
-# MAGIC
-# MAGIC This notebook's demo rule uses `payment`'s `tip_percent_of_base`. That
-# MAGIC column was created in Notebook 03.
+# MAGIC - The notebook reads the curated `payment` Parquet output written in
+# MAGIC   `03 - Cleaning and Curated Outputs`. It has 105 records.
+# MAGIC - This notebook only reads the curated data. It does not write any output.
+# MAGIC - `demo_trip_ids` selects one record for each `tip_band` label.
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
+# Reading path
 curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
-curated_trip_path = f"{curated_root}/trip"
 curated_payment_path = f"{curated_root}/payment"
 
-print(f"curated_trip_path = {curated_trip_path}")
 print(f"curated_payment_path = {curated_payment_path}")
+
+# One trip_id per tip_band: none, low, medium, high, unknown
+demo_trip_ids = [1, 2, 3, 102, 103]
 
 # COMMAND ----------
 
-trip_curated = spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    "parquet"
-).load(curated_trip_path)
 payment_curated = spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
     "parquet"
 ).load(curated_payment_path)
 
-print(f"Curated trip rows: {trip_curated.count()}")
 print(f"Curated payment rows: {payment_curated.count()}")
 
-payment_curated.select(
+payment_curated.filter(F.col("trip_id").isin(demo_trip_ids)).select(
     F.col("trip_id"),
+    F.col("tip_amount"),
+    F.col("base_fare_amount"),
     F.col("tip_percent_of_base"),
-).orderBy(F.col("trip_id")).show(10, truncate=False)
+).orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Built-ins as the default
+# MAGIC ## 2. The labelling rule
 # MAGIC
-# MAGIC The demo rule buckets `tip_percent_of_base` into a `tip_band` label:
+# MAGIC Both versions add a `tip_band` label based on `tip_percent_of_base`:
 # MAGIC
 # MAGIC | `tip_percent_of_base` | `tip_band` |
 # MAGIC |---|---|
-# MAGIC | NULL | `no_tip` |
-# MAGIC | `< 10` | `low` |
-# MAGIC | `10` – `< 20` | `medium` |
-# MAGIC | `>= 20` | `high` |
+# MAGIC | `NULL` | `unknown` |
+# MAGIC | `0` | `none` |
+# MAGIC | Greater than `0` and less than `10` | `low` |
+# MAGIC | `10` or greater and less than `20` | `medium` |
+# MAGIC | `20` or greater | `high` |
 # MAGIC
-# MAGIC `F.when` expresses this rule entirely with built-in expressions. Catalyst can
-# MAGIC inspect those expressions and optimize them together with the surrounding query
-# MAGIC plan.
+# MAGIC ## 3. Built-in version with `F.when`
+# MAGIC
+# MAGIC Spark checks the `F.when` conditions from top to bottom and returns the label of
+# MAGIC the first condition that is true. The `isNull()` check comes first because this
+# MAGIC rule needs a separate `unknown` label. Without it, `NULL` falls through to
+# MAGIC `.otherwise("high")`.
 
 # COMMAND ----------
 
 payment_tip_band_builtin = payment_curated.withColumn(
     "tip_band",
-    F.when(F.col("tip_percent_of_base").isNull(), F.lit("no_tip"))
+    F.when(F.col("tip_percent_of_base").isNull(), F.lit("unknown"))
+    .when(F.col("tip_percent_of_base") == 0, F.lit("none"))
     .when(F.col("tip_percent_of_base") < 10, F.lit("low"))
     .when(F.col("tip_percent_of_base") < 20, F.lit("medium"))
     .otherwise(F.lit("high")),
@@ -91,33 +92,30 @@ payment_tip_band_builtin = payment_curated.withColumn(
 )
 
 print("tip_band from built-in F.when:")
-payment_tip_band_builtin.orderBy(F.col("trip_id")).show(10, truncate=False)
+payment_tip_band_builtin.filter(F.col("trip_id").isin(demo_trip_ids)).orderBy(
+    F.col("trip_id")
+).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. The same rule as a Python UDF
+# MAGIC ## 4. Python UDF version
 # MAGIC
-# MAGIC PySpark DataFrame code is written in Python, but built-in column expressions do
-# MAGIC not process rows as ordinary Python code. Python builds Spark expressions; Spark
-# MAGIC executes them in its JVM-based engine. A Python UDF is different: its logic is
-# MAGIC regular Python, so Spark runs it in **Python worker** processes on the cluster.
+# MAGIC The same rule written as a regular Python function and registered with
+# MAGIC `F.udf`. `StringType()` is the data type the function returns.
 # MAGIC
-# MAGIC Spark transfers batches of values between Spark's JVM executor process and a
-# MAGIC Python worker process. Inside the Python worker, the regular UDF still processes
-# MAGIC one value at a time. That JVM–Python boundary adds serialization overhead
-# MAGIC built-in expressions avoid. Catalyst cannot inspect or optimize the Python logic
-# MAGIC inside the UDF.
-# MAGIC
-# MAGIC The demo below produces the same `tip_band` values as the built-in version; the
-# MAGIC difference is where and how Spark executes the logic.
+# MAGIC Spark passes `NULL` to the function as Python `None`. The function handles
+# MAGIC `None` before any numeric comparison, because Python raises a `TypeError` when
+# MAGIC comparing `None` with a number.
 
 # COMMAND ----------
 
 
 def tip_band_python(tip_percent):
     if tip_percent is None:
-        return "no_tip"
+        return "unknown"
+    if tip_percent == 0:
+        return "none"
     if tip_percent < 10:
         return "low"
     if tip_percent < 20:
@@ -137,62 +135,41 @@ payment_tip_band_udf = payment_curated.withColumn(
 )
 
 print("tip_band from a Python UDF (same values as the built-in version):")
-payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
+payment_tip_band_udf.filter(F.col("trip_id").isin(demo_trip_ids)).orderBy(
+    F.col("trip_id")
+).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Which approach to reach for
+# MAGIC ## 5. How Spark runs each version
 # MAGIC
-# MAGIC Both implementations above agree on `tip_band` because this rule is simple enough
-# MAGIC for built-ins — that is the common case in production.
+# MAGIC Both versions return the same `tip_band` values, but Spark runs them differently.
 # MAGIC
-# MAGIC | Approach | Execution | Use when |
+# MAGIC | | Built-in functions (`F.*`) | Python UDF (`F.udf`) |
 # MAGIC |---|---|---|
-# MAGIC | Built-in `F.*` | Spark JVM engine; Catalyst can inspect the expression | Default choice |
-# MAGIC | Python UDF | Python worker; logic is opaque to Catalyst | No suitable Spark built-in exists |
-# MAGIC | Pandas/Arrow UDF | Python worker using Arrow batches | Advanced fallback for vectorized Python logic |
+# MAGIC | Where logic runs | Executor JVM | Python worker process |
+# MAGIC | JVM–Python data transfer | Not required | Required |
+# MAGIC | Catalyst optimization | Can optimize the expression | Cannot inspect or optimize the Python function's internal logic |
 # MAGIC
-# MAGIC **Decision rule.**
+# MAGIC ## 6. When to use a Python UDF
 # MAGIC
-# MAGIC ```
-# MAGIC Can Spark built-in functions express the rule?
-# MAGIC         |
-# MAGIC         +-- Yes → use built-in functions
-# MAGIC         |
-# MAGIC         +-- No  → consider a UDF
-# MAGIC                     |
-# MAGIC                     +-- Vectorized Python/Pandas logic → Pandas/Arrow UDF
-# MAGIC                     |
-# MAGIC                     +-- Otherwise → regular Python UDF as a last resort
-# MAGIC ```
-# MAGIC
-# MAGIC A common mistake is reaching for a UDF out of familiarity with plain Python
-# MAGIC before checking whether `pyspark.sql.functions` already covers the rule — most
-# MAGIC of the transforms in Module 6 **`01 - Column Transforms with Built-in
-# MAGIC Functions`** and **`03 - Cleaning and Curated Outputs`** did not need one.
-# MAGIC
-# MAGIC **Advanced note.** Pandas UDFs use Apache Arrow to transfer data between Spark
-# MAGIC and Python in columnar batches and support vectorized Pandas operations. They can
-# MAGIC be useful when Python, Pandas, or NumPy logic is genuinely required, but they
-# MAGIC remain secondary to Spark built-in functions. This course does not cover them
-# MAGIC further.
+# MAGIC - Use built-in functions by default.
+# MAGIC - Use a Python UDF only when built-in functions cannot express the rule, for
+# MAGIC   example, when the logic needs a Python library that has no Spark equivalent.
+# MAGIC - Pandas UDFs use Apache Arrow to process data in column batches. They are an
+# MAGIC   advanced option that this course does not cover.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Default to built-ins.** Transformations with `F.*` create Spark expressions
-# MAGIC   that Spark runs in its JVM-based engine; Catalyst can inspect those expressions
-# MAGIC   and optimize them with the surrounding query plan.
-# MAGIC - **Python UDFs are a boundary crossing.** Regular Python logic runs in Python
-# MAGIC   worker processes; Spark transfers batches of values between Spark's JVM executor
-# MAGIC   process and those workers, and the UDF still processes one value at a time inside
-# MAGIC   the worker. Catalyst cannot inspect or optimize code inside the UDF.
-# MAGIC - **Reach for a UDF only when built-ins cannot express the rule** — for example
-# MAGIC   when you need custom Python or a library with no Spark built-in equivalent.
-# MAGIC   Pandas/Arrow UDFs are an advanced fallback for vectorized Python logic; this
-# MAGIC   course does not cover them further.
+# MAGIC - The built-in `F.when` version and the Python UDF version return the same
+# MAGIC   `tip_band` values for all five demo records.
+# MAGIC - Built-in functions run inside the executor JVM, and Catalyst can optimize them.
+# MAGIC - A Python UDF runs in a separate Python worker process, and Catalyst cannot
+# MAGIC   optimize the Python code.
+# MAGIC - Use a Python UDF only when built-in functions cannot express the rule.
 # MAGIC
-# MAGIC **Next:** Module 7 — Joins and Set Operations.
+# MAGIC **Next:** Module 7 — `01 - Introduction to PySpark Joins`

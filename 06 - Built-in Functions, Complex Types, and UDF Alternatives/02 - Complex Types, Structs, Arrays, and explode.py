@@ -2,33 +2,32 @@
 # MAGIC %md
 # MAGIC # 02 - Complex Types, Structs, Arrays, and explode
 # MAGIC
-# MAGIC Flatten nested **`drivers`** XML and write curated `drivers_flat`.
-# MAGIC
-# MAGIC Landing **`drivers`**.
+# MAGIC In this notebook, we read nested `drivers` XML, work with struct and array
+# MAGIC fields, and write a flattened `drivers_flat` dataset as Parquet.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Access struct fields, work with array columns, and flatten with **`explode`**
-# MAGIC   / **`explode_outer`**
+# MAGIC - Access fields inside a struct
+# MAGIC - Count array elements with `F.size()`
+# MAGIC - Flatten an array with `F.explode()` and compare it with `F.explode_outer()`
+# MAGIC - Write a flattened dataset as Parquet
+
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC The `drivers` dataset is XML in the landing Volume. Each driver record has:
-# MAGIC
-# MAGIC - `driver_id`, `name`, and `license_number`
-# MAGIC - `vehicle`, a struct with `make`, `model`, `year`, and `body_type`
-# MAGIC - `trips_assigned`, a struct whose `trip_id` field is an array of assigned trips
-# MAGIC
-# MAGIC The final output has one row per `driver_id` and assigned `trip_id`.
+# MAGIC Attach **all-purpose compute**.
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 
+# Reading path
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 drivers_xml_path = f"{landing_root}/drivers/drivers.xml"
+
+# Writing path
 curated_drivers_path = "/Volumes/rideshare_dev/processed/output_files/curated/drivers_flat"
 
 print(f"drivers_xml_path = {drivers_xml_path}")
@@ -37,11 +36,10 @@ print(f"curated_drivers_path = {curated_drivers_path}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Read landing `drivers` XML with `rowTag`
+# MAGIC ## 1. Read the `drivers` XML
 # MAGIC
-# MAGIC XML needs `rowTag` to identify one record. In this file, each `<driver>` element
-# MAGIC is one row. This is the same source pattern used in Module 5
-# MAGIC **`05 - Reading XML`**.
+# MAGIC Read the landing XML file using `rowTag="driver"`. Inspect the inferred schema
+# MAGIC and sample records.
 
 # COMMAND ----------
 
@@ -57,12 +55,9 @@ drivers.show(3, vertical=True, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Access fields in the `vehicle` struct
+# MAGIC ## 2. Access fields inside the `vehicle` struct
 # MAGIC
-# MAGIC A **struct** stores related named fields in one column. `vehicle` is a struct, so
-# MAGIC `F.col("vehicle.make")` reads its `make` field without creating extra rows.
-# MAGIC
-# MAGIC This keeps one row per driver while selecting only the vehicle details needed.
+# MAGIC Use dot notation to select the vehicle fields as separate columns.
 
 # COMMAND ----------
 
@@ -80,13 +75,10 @@ drivers_with_vehicle.show(5, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Work with the `trips_assigned` array
+# MAGIC ## 3. Work with the assigned-trip array
 # MAGIC
-# MAGIC `trips_assigned` is a struct wrapper. Its `trip_id` field is the actual array.
-# MAGIC An array keeps many values in one row, which is useful before we need one row per
-# MAGIC assigned trip.
-# MAGIC
-# MAGIC `F.size` counts the number of elements in an array without flattening it.
+# MAGIC Access `trips_assigned.trip_id` and use `F.size()` to count the assigned trips
+# MAGIC for each driver.
 
 # COMMAND ----------
 
@@ -101,14 +93,9 @@ drivers_with_assignment_counts.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Flatten assigned trips with `explode` and `explode_outer`
+# MAGIC ## 4. Flatten assigned trips with `explode`
 # MAGIC
-# MAGIC `F.explode` creates one output row for each array element. A driver assigned
-# MAGIC three trips becomes three rows.
-# MAGIC
-# MAGIC `F.explode` removes a row when its array is `NULL` or empty.
-# MAGIC `F.explode_outer` keeps that driver and returns `NULL` for the exploded value.
-# MAGIC Use `explode_outer` when keeping unmatched parent rows matters.
+# MAGIC Use `F.explode()` to create one row for each assigned trip.
 
 # COMMAND ----------
 
@@ -124,9 +111,12 @@ drivers_exploded.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The landing file may not contain an unassigned driver. This small demonstration
-# MAGIC keeps only `D001` and makes its array `NULL` to show the difference between the
-# MAGIC two APIs. The curated output below still uses the original landing data.
+# MAGIC ### Compare `explode` and `explode_outer`
+# MAGIC
+# MAGIC The next example temporarily sets the assigned-trip array for `D001` to `NULL`
+# MAGIC to compare how both functions handle it.
+# MAGIC
+# MAGIC The original `drivers` DataFrame remains unchanged.
 
 # COMMAND ----------
 
@@ -152,12 +142,13 @@ explode_comparison.select(
 # MAGIC %md
 # MAGIC ## 5. Write flattened drivers to curated storage
 # MAGIC
-# MAGIC Build the curated output from the original landing data. It preserves driver and
-# MAGIC vehicle fields, then uses `F.explode` so the output grain is one row per
-# MAGIC `driver_id` and `trip_id`.
+# MAGIC Create `drivers_flat` from the original `drivers` DataFrame, with one row per
+# MAGIC driver and assigned trip.
 # MAGIC
-# MAGIC Write Parquet with `.mode("overwrite")` so a rerun replaces this notebook's
-# MAGIC previous output.
+# MAGIC Drivers with empty or `NULL` assigned-trip arrays are excluded because the
+# MAGIC transformation uses `F.explode()`.
+# MAGIC
+# MAGIC Write the result as Parquet to curated storage.
 
 # COMMAND ----------
 
@@ -172,7 +163,7 @@ drivers_flat = drivers.select(
     F.explode(F.col("trips_assigned.trip_id")).alias("trip_id"),
 )
 
-drivers_flat.write.mode("overwrite").parquet(curated_drivers_path)
+drivers_flat.write.format("parquet").mode("overwrite").save(curated_drivers_path)
 
 print(f"Wrote curated drivers data to {curated_drivers_path}")
 drivers_flat.show(10, truncate=False)
@@ -182,13 +173,10 @@ drivers_flat.show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Read XML with `format("xml")` and `rowTag="driver"` to create one driver row
-# MAGIC   per `<driver>` element.
-# MAGIC - Access struct fields with paths such as `vehicle.make`.
-# MAGIC - Access the assigned-trip array through `trips_assigned.trip_id`; use `F.size`
-# MAGIC   when the array should remain nested.
-# MAGIC - Use `F.explode` for one row per assigned trip and `F.explode_outer` when drivers
-# MAGIC   without assigned trips must remain in the output.
-# MAGIC - Wrote the flattened drivers dataset to `curated/drivers_flat/` as Parquet.
+# MAGIC - Accessed fields inside the `vehicle` struct.
+# MAGIC - Used `F.size()` to count assigned trips.
+# MAGIC - Used `F.explode()` to create separate rows for assigned trips.
+# MAGIC - Compared `F.explode()` and `F.explode_outer()` using a `NULL` array.
+# MAGIC - Wrote the flattened drivers dataset as Parquet.
 # MAGIC
-# MAGIC **Next:** Module 6 **`03 - Cleaning and Curated Outputs`**.
+# MAGIC **Next:** `03 - Cleaning and Curated Outputs`

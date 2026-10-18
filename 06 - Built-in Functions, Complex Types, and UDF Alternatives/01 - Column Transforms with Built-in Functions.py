@@ -27,10 +27,13 @@
 
 from pyspark.sql import functions as F
 
+# Reading path
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 trip_csv_path = f"{landing_root}/trip/trip.csv"
 trip_time_parquet_path = f"{landing_root}/trip_time/trip_time.parquet"
 payment_avro_path = f"{landing_root}/payment/payment.avro"
+
+# Managed table
 trip_time_table = "rideshare_dev.processed.trip_time_preview"
 
 print(f"trip_csv_path = {trip_csv_path}")

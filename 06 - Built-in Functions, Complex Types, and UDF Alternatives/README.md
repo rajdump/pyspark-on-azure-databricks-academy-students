@@ -34,7 +34,7 @@ Complete Module 5 content notebooks **`01`–`07`**. You need:
 | Landing volume | `/Volumes/rideshare_dev/landing/source_files/{dataset}/` populated |
 | Controlled-bad CSVs | `/Volumes/rideshare_dev/landing/source_files/trip/bad_trip_data.csv` and `/Volumes/rideshare_dev/landing/source_files/payment/bad_payment_data.csv` from Module 5 `01 - Unity Catalog Volumes and Data Landing.py` |
 | Managed table | **`rideshare_dev.processed.trip_time_preview`** from Module 5 `07 - Write Patterns and Table Preview.py` |
-| Write model | Comfort with transformations vs actions; **`DataFrame.write`** executes on **`.save()`** / **`.parquet()`** / **`.saveAsTable()`** (Module 4) |
+| Write model | Comfort with transformations vs actions (Module 4); **`DataFrame.write`** executes on **`.save()`** / **`.parquet()`** / **`.saveAsTable()`** (Module 5) |
 
 Recall Module 3 (`01 - NULL Semantics and Predicate Correctness.py`–
 `03 - Safe Type Casting.py`): NULL-aware filters, normalize-before-drop,

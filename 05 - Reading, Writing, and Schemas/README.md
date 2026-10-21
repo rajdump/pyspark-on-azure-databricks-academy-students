@@ -9,8 +9,8 @@ formats, comparing schema inference with explicit schemas.
 
 By the end of this module, you'll be able to:
 
-- Set Tier 1 lab config (storage account, container, storage credential,
-  ADLS folder) and create `rideshare_dev` landing/processed volumes
+- Set the lab configuration (storage account, container, storage credential,
+  ADLS folder) and create `rideshare_dev` landing and processed volumes
 - Copy repo source files into
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/` and verify
 - Land full-size controlled-bad `bad_trip_data.csv` and `bad_payment_data.csv`
@@ -86,7 +86,7 @@ controlled-bad CSVs for Module 6.
 
 ### Learning objectives
 
-- Set Tier 1 lab config and create `rideshare_dev` landing/processed volumes
+- Set the lab configuration and create `rideshare_dev` landing and processed volumes
 - Copy canonical + controlled-bad sources into landing and verify
 
 ### Lesson flow

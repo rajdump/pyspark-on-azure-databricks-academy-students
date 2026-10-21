@@ -23,14 +23,14 @@ By the end of this module, you'll be able to:
 
 ## Prerequisites
 
-Complete Module 8 notebooks **`01`–`08`**. You need:
+Complete Module 8 notebooks **`01`–`09`**. You need:
 
 | Asset | Rows / notes | Source |
 |---|---|---|
 | `rideshare_dev.processed.trip_enriched` | 106 — one per `trip_id`; 16 columns | Module 7 `07 - Build Unified Curated Tables.py` |
 | `rideshare_dev.processed.trip_driver_assignment` | 100 — one per (`driver_id`, `trip_id`); trips 1–100; trips **101–106** have no driver | Module 7 `07 - Build Unified Curated Tables.py` |
-| `rideshare_dev.processed.kpi_daily_trip_summary` | 14 — one per `trip_date` | Module 8 `08 - Build KPI Tables.py` |
-| `rideshare_dev.processed.kpi_zone_performance` | 20 — one per (`pickup_borough`, `pickup_zone`) | Module 8 `08 - Build KPI Tables.py` |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | 14 — one per `trip_date` | Module 8 `09 - Build KPI Tables.py` |
+| `rideshare_dev.processed.kpi_zone_performance` | 20 — one per (`pickup_borough`, `pickup_zone`) | Module 8 `09 - Build KPI Tables.py` |
 
 Also recall: Module 2 `06 - Querying DataFrames with SQL.py` (temp views /
 `%sql` / `spark.sql`); Module 7 join patterns; Module 8 aggregates, pivot,

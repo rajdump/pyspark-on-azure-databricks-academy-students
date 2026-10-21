@@ -25,7 +25,7 @@
 # MAGIC
 # MAGIC The table contains **106 trips**.
 # MAGIC
-# MAGIC Module 8 `04 - Pivot` introduced the DataFrame `pivot` operation. Here we
+# MAGIC Module 8 `05 - Pivot` introduced the DataFrame `pivot` operation. Here we
 # MAGIC use the SQL forms, including `UNPIVOT`.
 
 # COMMAND ----------
@@ -199,7 +199,7 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC The sample is not seeded here, so re-runs can differ. The percentage is
 # MAGIC approximate, not an exact row count.
 # MAGIC
-# MAGIC Module 8 `07 - Top-N per Group and Sampling` used seeded `.sample()`
+# MAGIC Module 8 `08 - Top-N per Group and Sampling` used seeded `.sample()`
 # MAGIC when you need the same draw again.
 # MAGIC
 # MAGIC **Expected:** roughly **25–30 rows** from this 106-row table.

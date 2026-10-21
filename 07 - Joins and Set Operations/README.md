@@ -18,14 +18,14 @@ By the end of this module, you'll be able to:
   why `NULL` keys do not match (`NULL = NULL` is not true), and use
   **`eqNullSafe`** when `NULL` keys must match
 - Explain **`crossJoin`** and an always-true join condition
-- Run a **repeated lookup join** (`zone_lookup` for pickup and dropoff),
-  clean columns with **`select` / rename**, and **`F.broadcast`** a small
-  dimension (confirm in **`.explain()`**)
+- Compare a Sort-Merge Join with a Broadcast Hash Join, and use
+  **`F.broadcast`** on a small zone lookup
 - Use **`left_semi` / `left_anti`**, and contrast anti-join with **`subtract()`**
 - Combine frames with **`union` / `unionByName` / `intersect` /
   `intersectAll` / `subtract` / `exceptAll`**
 - Apply those patterns in `07 - Build Unified Curated Tables.py` to write
-  **`trip_enriched`** and **`trip_driver_assignment`**
+  **`trip_enriched`** (trip, time, payment, and pickup/dropoff zones) and
+  **`trip_driver_assignment`**
 
 ## Prerequisites
 
@@ -159,20 +159,20 @@ drivers). Key profiling with `count("*")`, `countDistinct`,
 
 ### Context
 
-Repeated zone lookup, column cleanup, and broadcast — reused in notebook
-**07**.
+Compare Sort-Merge Join and Broadcast Hash Join on a pickup zone lookup.
+Notebook **07** reuses `F.broadcast` for pickup and dropoff.
 
 ### Learning objectives
 
-- Run a repeated lookup join (`zone_lookup` for pickup and dropoff)
-- Clean columns with `select` / rename and `F.broadcast` a small dimension
-  (confirm in `.explain()`)
+- Tell a Sort-Merge Join from a Broadcast Hash Join
+- Use `F.broadcast` on a small lookup when automatic broadcasting is off
+- See that both strategies return the same rows
 
 ### Lesson flow
 
-Apply **01–02** join and key-profiling patterns (no re-teach); fact vs dim;
-repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**;
-`-1` threshold then `F.broadcast` + `.explain()` (reused in **07**).
+Disable automatic broadcast; left-join curated `trip` to `zone_lookup` on
+the pickup location; select the pickup borough and zone; repeat the join
+with `F.broadcast`; reset the broadcast settings.
 
 ### Expected state
 
@@ -242,13 +242,13 @@ Whole-row set ops on constructed frames.
 
 ### Learning objectives
 
-- Use `intersect` / `intersectAll` / `subtract` / `exceptAll` and SQL
-  `EXCEPT` naming
+- Use `intersect` / `intersectAll` / `subtract` / `exceptAll` and see how
+  duplicate rows are kept or removed
 
 ### Lesson flow
 
-Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`;
-SQL `EXCEPT` naming.
+Constructed frames with repeated rows (trips 8, 9, and 10); `intersect` vs
+`intersectAll`; `subtract` vs `exceptAll`.
 
 ### Expected state
 
@@ -263,26 +263,33 @@ SQL `EXCEPT` naming.
 
 ### Context
 
-Write-only business flow: load, build both tables per mapping docs,
-`saveAsTable` overwrite.
+Combine the curated and landing datasets into `trip_enriched` and
+`trip_driver_assignment`.
 
 ### Learning objectives
 
-- Apply the module patterns to write **`trip_enriched`** and
-  **`trip_driver_assignment`**
+- Build `trip_enriched` from curated trip, landing time, curated payment,
+  and pickup/dropoff zones
+- Build `trip_driver_assignment` from `drivers_flat` and curated trip
+- Write both with `saveAsTable` overwrite
 
 ### Lesson flow
 
-Write-only business flow: load → stepwise left joins + zone broadcast →
-select 16/13 mapping columns → `saveAsTable` overwrite; short AQE note — no
-profiling, validation, or practice.
+Load curated trip, payment, and `drivers_flat`, plus landing `trip_time`
+and `zone_lookup`. Left-join trip to time and payment on `trip_id`.
+Broadcast `zone_lookup` for pickup and dropoff, select the 16 mapping
+columns, and overwrite `rideshare_dev.processed.trip_enriched`. Left-join
+`drivers_flat` to curated trip, select the 13 mapping columns, and
+overwrite `rideshare_dev.processed.trip_driver_assignment`. No validation
+checks.
 
 ### Expected state
 
 - Input: curated trip/payment/drivers_flat; landing `trip_time`,
   `zone_lookup`
-- Output: `rideshare_dev.processed.trip_enriched` (106 rows, 16 columns) and
-  `rideshare_dev.processed.trip_driver_assignment` (13 columns). See Dataset.
+- Output: `rideshare_dev.processed.trip_enriched` (106 rows, 16 columns)
+  and `rideshare_dev.processed.trip_driver_assignment` (100 rows, 13
+  columns). Counts are expected for the course dataset. See Dataset.
 
 ### Next
 

@@ -174,16 +174,16 @@ inputs per notebook are in
 
 ```mermaid
 flowchart LR
-    TE[("trip_enriched")] --> PRACTICE["01-07 aggregation and<br/>window practice"]
+    TE[("trip_enriched")] --> PRACTICE["01-08 aggregation and<br/>window practice"]
     TDA[("trip_driver_assignment")] --> PRACTICE
-    TE --> NB08["08 Build<br/>KPI Tables"]
-    TDA --> NB08
-    NB08 --> K1[("kpi_daily_trip_summary")]
-    NB08 --> K2[("kpi_zone_performance")]
-    NB08 --> K3[("kpi_driver_productivity")]
+    TE --> NB09["09 Build<br/>KPI Tables"]
+    TDA --> NB09
+    NB09 --> K1[("kpi_daily_trip_summary")]
+    NB09 --> K2[("kpi_zone_performance")]
+    NB09 --> K3[("kpi_driver_productivity")]
 ```
 
-Every notebook here reads managed tables rather than files, and only notebook 08
+Every notebook here reads managed tables rather than files, and only notebook 09
 writes.
 
 ### Module 9 queries the same tables in SQL

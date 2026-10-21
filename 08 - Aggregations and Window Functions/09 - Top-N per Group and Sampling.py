@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 07 - Top-N per Group and Sampling
+# MAGIC # 09 - Top-N per Group and Sampling
 # MAGIC
 # MAGIC Top-N per group, NULL sort placement, and sampling.
 # MAGIC
@@ -19,7 +19,7 @@
 # MAGIC 1. **How should ties at the cutoff be handled?**
 # MAGIC 2. **Where should NULL values appear in the sort order?**
 # MAGIC
-# MAGIC This notebook extends the ranking pattern from Notebook **05**, then
+# MAGIC This notebook extends the ranking pattern from Notebook **06**, then
 # MAGIC introduces reproducible sampling with `sample`, `sampleBy`, and
 # MAGIC `randomSplit`.
 # MAGIC
@@ -32,9 +32,9 @@
 # MAGIC | 3 | NULL sort placement | Control where NULLs appear in window `orderBy` |
 # MAGIC | 4 | Sampling | Draw reproducible subsets with a seed |
 # MAGIC
-# MAGIC Run this module **01–06**, especially
-# MAGIC **`05 - Window Functions Fundamentals`** and
-# MAGIC **`06 - Running Totals and Lag and Lead`**.
+# MAGIC Run this module **01–07**, especially
+# MAGIC **`06 - Window Functions Fundamentals`** and
+# MAGIC **`07 - Running Totals and Lag and Lead`**.
 # COMMAND ----------
 
 # DBTITLE 1,Setup — load both managed tables
@@ -42,14 +42,15 @@
 # MAGIC ## Setup — load both managed tables
 # MAGIC
 # MAGIC Shared schemas and inherited NULL details remain in Module 8
-# MAGIC **`01 - GroupBy and Basic Aggregations`** and `docs/data/dataset-overview.md`.
+# MAGIC **`01 - GroupBy and Basic Aggregations`**, **`02 - NULL Handling in Aggregations`**,
+# MAGIC and `docs/data/dataset-overview.md`.
 # MAGIC
 # MAGIC | DataFrame | Rows | Used for |
 # MAGIC |---|---:|---|
 # MAGIC | `trip_driver_assignment` | 100 | Sections 1–2 (Top-N); Section 4c |
 # MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort); Section 4a–4b |
 # MAGIC
-# MAGIC Notebook **05** introduced Top-2 per driver. Here we extend the same pattern
+# MAGIC Notebook **06** introduced Top-2 per driver. Here we extend the same pattern
 # MAGIC to Top-3 and verify how filtering changes the output grain.
 
 # COMMAND ----------
@@ -86,7 +87,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment_rows} rows")
 # MAGIC | Input | **100** rows — one per (`driver_id`, `trip_id`) |
 # MAGIC | After Top-3 filter | **36** rows — three trips per driver in this dataset |
 # MAGIC
-# MAGIC In Notebook **05**, Top-2 used `distance_row_number <= 2` (100 → **24**).
+# MAGIC In Notebook **06**, Top-2 used `distance_row_number <= 2` (100 → **24**).
 # MAGIC Here the same `row_number` + `filter` pattern keeps the **top 3** longest
 # MAGIC trips per driver. Ranking keeps every row until `filter()` changes the
 # MAGIC grain.
@@ -661,5 +662,5 @@ subset_b.select(
 # MAGIC | NULL ordering | Specify NULL placement when the sort column can be NULL |
 # MAGIC | Sampling | Use a seed when reproducibility matters |
 # MAGIC
-# MAGIC **Next:** Module 8 **`08 - Build KPI Tables`** — write three managed
+# MAGIC **Next:** Module 8 **`10 - Build KPI Tables`** — write three managed
 # MAGIC `kpi_*` Delta tables for Module 9.

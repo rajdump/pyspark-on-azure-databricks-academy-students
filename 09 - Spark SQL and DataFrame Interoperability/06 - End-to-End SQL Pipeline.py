@@ -261,7 +261,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Summary — Module 9
 # MAGIC
-# MAGIC The three KPI contracts from Module 8 `08 - Build KPI Tables` can be
+# MAGIC The three KPI contracts from Module 8 `09 - Build KPI Tables` can be
 # MAGIC expressed in Spark SQL — **same logic, different API**.
 # MAGIC
 # MAGIC | Notebook | Focus |

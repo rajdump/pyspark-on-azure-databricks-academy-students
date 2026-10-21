@@ -1,25 +1,37 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 08 - Lag and Lead
 # MAGIC
-# MAGIC Row-to-row comparisons across an ordered window using `lag()` and `lead()`.
+# MAGIC In the previous lesson, you used window frames to calculate running totals and to read the first and last fare in each borough.
 # MAGIC
-# MAGIC `trip_enriched`.
+# MAGIC In this lesson, you will use `lag()` and `lead()` to compare daily base fare totals with the previous and next available dates. 
+# MAGIC
+# MAGIC `lag()` reads a value from the previous row in the window, and `lead()` reads a value from the next row. 
+# MAGIC
+# MAGIC You can then answer questions such as "How much did the daily base fare change since the previous date?" without joining the table to itself.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Compare adjacent rows using `lag()` and `lead()`
+# MAGIC - Read the previous trip's fare with `lag()` and the next trip's fare with `lead()`.
+# MAGIC - Calculate the change in fare between consecutive trips.
+# MAGIC - Explain how `orderBy()` determines which rows `lag()` and `lead()` access.
+# MAGIC - Handle the `null` returned for the first row (`lag()`) and the last row (`lead()`) in each partition.
+
 # COMMAND ----------
 
 # DBTITLE 1,Setup
 # MAGIC %md
-# MAGIC ## Setup — load `trip_enriched` and build the 14-day daily summary
+# MAGIC ## Setup
 # MAGIC
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC Six trips (`101`–`106`) have no `trip_date`. Keep the **100 dated trips**
-# MAGIC and aggregate them into the **14-row daily summary** (`daily_summary`)
-# MAGIC from Notebook **07**.
+# MAGIC This notebook uses the `trip_enriched` table created in Module 7 (Notebook 07), which contains 106 rows, one row per trip.
+# MAGIC
+# MAGIC Six trips (`101`–`106`) have no `trip_date`. The notebook keeps the 100 dated trips and calculates the total `base_fare_amount` for each day.
 
 # COMMAND ----------
 
@@ -27,9 +39,7 @@
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-trip_enriched_table = "rideshare_dev.processed.trip_enriched"
-
-trip_enriched = spark.table(trip_enriched_table)  # noqa: F821
+trip_enriched = spark.table("rideshare_dev.processed.trip_enriched")  # noqa: F821
 dated_trip = trip_enriched.filter(F.col("trip_date").isNotNull())
 
 daily_summary = dated_trip.groupBy("trip_date").agg(
@@ -48,27 +58,13 @@ daily_summary.orderBy("trip_date").show(truncate=False)
 # MAGIC %md
 # MAGIC ## 1. Did today beat the previous day?
 # MAGIC
-# MAGIC A running total answers **"how much so far?"** Finance now wants each daily
-# MAGIC fare total beside the values from the rows immediately before and after it.
+# MAGIC The Finance team wants to compare daily base fare totals to see whether revenue increased or decreased.
 # MAGIC
-# MAGIC - `lag(column, 1)` reads the column from one earlier row.
-# MAGIC - `lead(column, 1)` reads the column from one later row.
-# MAGIC
-# MAGIC Order the 14-row `daily_summary` series by `trip_date`. No `partitionBy` is
-# MAGIC needed because all 14 dates belong to the same reporting period.
-# MAGIC
-# MAGIC The worked data contains every date from `2026-03-01` through
-# MAGIC `2026-03-14`, so the previous row is also the previous calendar day here.
-# MAGIC That is a property of this dataset—not a guarantee made by `lag`.
-# MAGIC
-# MAGIC Unlike a running aggregate, `lag` and `lead` use a fixed row offset. Their
-# MAGIC ordered window does not need `rowsBetween`.
+# MAGIC `lag()` retrieves the previous date's total, while `lead()` retrieves the next date's total. Subtracting the previous total from the current total gives the daily change.
 
 # COMMAND ----------
 
 # DBTITLE 1,Add previous, next, and change columns
-# lag and lead use row offsets in this ordered series; they do not use a
-# running ROWS frame.
 daily_order_window = Window.orderBy("trip_date")
 
 daily_with_comparisons = (
@@ -81,7 +77,7 @@ daily_with_comparisons = (
         F.lead(F.col("daily_base_fare"), 1).over(daily_order_window),
     )
     .withColumn(
-        "base_fare_change_vs_previous_day",
+        "daily_change_in_revenue",
         F.round(
             F.col("daily_base_fare") - F.col("previous_day_base_fare"),
             2,
@@ -91,10 +87,9 @@ daily_with_comparisons = (
 
 daily_with_comparisons.select(
     "trip_date",
-    "trip_count",
     "daily_base_fare",
     "previous_day_base_fare",  # derived column
-    "base_fare_change_vs_previous_day",  # derived column
+    "daily_change_in_revenue",  # derived column
     "next_day_base_fare",  # derived column
 ).orderBy(
     "trip_date",
@@ -102,17 +97,12 @@ daily_with_comparisons.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Interpret the boundaries and the offset
 # MAGIC %md
 # MAGIC - The first date has no previous row, so `previous_day_base_fare` and the
-# MAGIC   change column are NULL.
+# MAGIC  change column are NULL.
 # MAGIC - The final date has no later row, so `next_day_base_fare` is NULL.
-# MAGIC - A positive change means the current date earned more base fare than the
-# MAGIC   previous row; a negative change means it earned less.
-# MAGIC
-# MAGIC The offset is measured in **rows**, not calendar days. If `2026-03-08`
-# MAGIC were missing, the `lag` value for `2026-03-09` would come from
-# MAGIC `2026-03-07`, not from an automatically created March 8 row.
+# MAGIC - A positive change means the current day earned more than the
+# MAGIC  previous day; a negative change means it earned less.
 
 # COMMAND ----------
 
@@ -120,10 +110,9 @@ daily_with_comparisons.select(
 # MAGIC %md
 # MAGIC ## Key Takeaways
 # MAGIC
-# MAGIC - `lag(column, n)` reads a value from `n` rows before the current row within the ordered window.
-# MAGIC - `lead(column, n)` reads a value from `n` rows after the current row within the ordered window.
-# MAGIC - `lag()` and `lead()` step by **rows**, not calendar dates, and do not need `rowsBetween()`.
-# MAGIC - Rows at the start or end of a partition have no previous or next row, so `lag()` and `lead()` return `NULL`.
+# MAGIC - `lag(column, n)` retrieves a value from `n` rows before the current row.
+# MAGIC - `lead(column, n)` retrieves a value from `n` rows after the current row.
+# MAGIC - `orderBy()` determines the row sequence. Offsets refer to row positions.
+# MAGIC - By default, `lag()` and `lead()` return `NULL` when the requested previous or next row does not exist within the partition.
 # MAGIC
-# MAGIC **Next:** Module 8 **`09 - Top-N per Group and Sampling`** — Top-N with
-# MAGIC `row_number`, NULL sort placement, and sampling.
+# MAGIC **Next:** `09 - Top-N per Group and NULL Ordering`

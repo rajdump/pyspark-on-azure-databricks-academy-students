@@ -328,26 +328,24 @@ Row-to-row comparisons across an ordered window using `lag()` and `lead()`.
 
 ### Next
 
-`09 - Top-N per Group and Sampling`
+`09 - Top-N per Group and NULL Ordering`
 
-## Notebook 09 — Top-N per Group and Sampling
+## Notebook 09 — Top-N per Group and NULL Ordering
 
 ### Context
 
-Top-N per group, NULL sort placement, and sampling.
+Top-N per group and NULL sort placement.
 
 ### Learning objectives
 
+- Select Top-N per group (including tie-selection policy)
 - Control NULL sort placement with `nullsFirst` / `nullsLast`
-- Select Top-N per group (including tie-selection policy) and draw
-  reproducible samples with `sample` / `sampleBy` / `randomSplit`
 
 ### Lesson flow
 
 Top-N per group (`row_number` + filter; extends **06** Top-2); Top-N
 selection policy (`row_number <= N` vs `rank <= N`, secondary sort);
-`nullsFirst` / `nullsLast` (standalone sort placement); `sample` /
-`sampleBy` / `randomSplit`.
+`nullsFirst` / `nullsLast` (standalone sort placement).
 
 ### Expected state
 
@@ -356,9 +354,34 @@ selection policy (`row_number <= N` vs `rank <= N`, secondary sort);
 
 ### Next
 
-`10 - Build KPI Tables`
+`10 - Sampling`
 
-## Notebook 10 — Build KPI Tables
+## Notebook 10 — Sampling
+
+### Context
+
+Draw reproducible subsets of rows with `sample`, `sampleBy`, and `randomSplit` — no write.
+
+### Learning objectives
+
+- Draw reproducible samples with `sample` / `sampleBy` / `randomSplit`
+
+### Lesson flow
+
+`sample` with approximate fraction and seed reproducibility; `sampleBy`
+stratified by `service_type` (omitted keys receive fraction 0); `randomSplit`
+into weighted subsets with a seed.
+
+### Expected state
+
+- Input: `trip_enriched`, `trip_driver_assignment`
+- Output: none (no write)
+
+### Next
+
+`11 - Build KPI Tables`
+
+## Notebook 11 — Build KPI Tables
 
 ### Context
 

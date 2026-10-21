@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 10 - Build KPI Tables
+# MAGIC # 11 - Build KPI Tables
 # MAGIC
 # MAGIC Write-only: three managed `kpi_*` Delta tables for Module 9.
 # MAGIC

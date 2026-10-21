@@ -1,16 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 09 - Top-N per Group and Sampling
+# MAGIC # 09 - Top-N per Group and NULL Ordering
 # MAGIC
-# MAGIC Top-N per group, NULL sort placement, and sampling.
+# MAGIC Top-N per group and NULL sort placement.
 # MAGIC
 # MAGIC `trip_enriched`, `trip_driver_assignment`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
+# MAGIC - Select Top-N per group (including tie-selection policy)
 # MAGIC - Control NULL sort placement with `nullsFirst` / `nullsLast`
-# MAGIC - Select Top-N per group (including tie-selection policy) and draw reproducible
-# MAGIC   samples with `sample` / `sampleBy` / `randomSplit`
 # COMMAND ----------
 
 # MAGIC %md
@@ -19,9 +18,8 @@
 # MAGIC 1. **How should ties at the cutoff be handled?**
 # MAGIC 2. **Where should NULL values appear in the sort order?**
 # MAGIC
-# MAGIC This notebook extends the ranking pattern from Notebook **06**, then
-# MAGIC introduces reproducible sampling with `sample`, `sampleBy`, and
-# MAGIC `randomSplit`.
+# MAGIC This notebook extends the ranking pattern from Notebook **06** and shows
+# MAGIC how to control NULL placement in window `orderBy()`.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
@@ -30,11 +28,9 @@
 # MAGIC | 1 | Top-N + output grain | Rank, filter, then verify what one row represents |
 # MAGIC | 2 | Ties at the cutoff | Choose `row_number` vs `rank`; add a secondary sort when needed |
 # MAGIC | 3 | NULL sort placement | Control where NULLs appear in window `orderBy` |
-# MAGIC | 4 | Sampling | Draw reproducible subsets with a seed |
 # MAGIC
-# MAGIC Run this module **01–07**, especially
-# MAGIC **`06 - Window Functions Fundamentals`** and
-# MAGIC **`07 - Running Totals and Lag and Lead`**.
+# MAGIC Run this module **01–08**, especially
+# MAGIC **`06 - Window Functions Fundamentals`**.
 # COMMAND ----------
 
 # DBTITLE 1,Setup — load both managed tables
@@ -47,8 +43,8 @@
 # MAGIC
 # MAGIC | DataFrame | Rows | Used for |
 # MAGIC |---|---:|---|
-# MAGIC | `trip_driver_assignment` | 100 | Sections 1–2 (Top-N); Section 4c |
-# MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort); Section 4a–4b |
+# MAGIC | `trip_driver_assignment` | 100 | Sections 1–2 (Top-N) |
+# MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort) |
 # MAGIC
 # MAGIC Notebook **06** introduced Top-2 per driver. Here we extend the same pattern
 # MAGIC to Top-3 and verify how filtering changes the output grain.
@@ -480,176 +476,6 @@ tip_desc_nulls_last.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,How do we draw a reproducible subset of rows?
-# MAGIC %md
-# MAGIC ## 4. How do we draw a reproducible subset of rows?
-# MAGIC
-# MAGIC Before running a fare audit across the full trip dataset, you may want a
-# MAGIC smaller subset for quick spot-checks. Spark provides three useful options:
-# MAGIC
-# MAGIC | API | Use it when |
-# MAGIC |---|---|
-# MAGIC | `sample` | Select an approximate fraction of rows |
-# MAGIC | `sampleBy` | Sample different fractions for different key values |
-# MAGIC | `randomSplit` | Split the DataFrame into multiple subsets |
-# MAGIC
-# MAGIC Use a **`seed`** when you want the random selection to be repeatable for the
-# MAGIC same input data and sampling configuration.
-# MAGIC
-# MAGIC ### 4a. `sample` — approximate fraction and seed reproducibility
-# MAGIC
-# MAGIC `fraction` is a per-row probability, not a guaranteed row count — so
-# MAGIC `0.2` means "about 20%," not exactly one-fifth of the table.
-# MAGIC
-# MAGIC The next cells draw a seeded sample, then confirm the same seed on the
-# MAGIC same input returns the same `trip_id` set.
-
-# COMMAND ----------
-
-# DBTITLE 1,sample with seed 42
-trip_sample_a = trip_enriched.sample(
-    withReplacement=False,  # each row can appear at most once
-    fraction=0.2,  # aim for about 20% of rows (not an exact count)
-    seed=42,  # fixed starting number so a rerun keeps the same rows
-)
-
-trip_sample_a_rows = trip_sample_a.count()
-
-print(f"sample (~0.2, seed=42): {trip_sample_a_rows} rows from {trip_enriched_rows}")
-
-trip_sample_a.select(
-    "trip_id",
-    "service_type",
-    "pickup_borough",
-    "trip_distance_miles",
-).show(5, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Verify the same seed reproduces the sample
-trip_sample_b = trip_enriched.sample(
-    withReplacement=False,  # each row can appear at most once
-    fraction=0.2,  # aim for about 20% of rows (not an exact count)
-    seed=42,  # fixed starting number so a rerun keeps the same rows
-)
-
-trip_sample_b_rows = trip_sample_b.count()
-
-print(f"Sample B: {trip_sample_b_rows} rows (same as A)")
-
-only_in_a = (
-    trip_sample_a.select("trip_id")
-    .subtract(trip_sample_b.select("trip_id"))
-    .count()
-)
-only_in_b = (
-    trip_sample_b.select("trip_id")
-    .subtract(trip_sample_a.select("trip_id"))
-    .count()
-)
-print(
-    f"Trips only in A: {only_in_a}, only in B: {only_in_b} — "
-    "same seed produces identical subsets"
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Which service types get sampled?
-# MAGIC %md
-# MAGIC ### 4b. Which service types get sampled?
-# MAGIC
-# MAGIC `sampleBy` samples rows **within each key** using the fraction assigned to that
-# MAGIC key.
-# MAGIC
-# MAGIC Any key **not included** in the fractions map gets a sampling fraction of **0**
-# MAGIC and is therefore excluded.
-# MAGIC
-# MAGIC Here, the map includes four service types but omits **`UNKNOWN`**. The full
-# MAGIC dataset contains **2 UNKNOWN rows**, but the sampled result should contain
-# MAGIC **0**.
-
-# COMMAND ----------
-
-# DBTITLE 1,Draw stratified sample without UNKNOWN
-service_type_fractions = {
-    "STANDARD": 0.2,
-    "SHARED": 0.2,
-    "PREMIUM": 0.2,
-    "XL": 0.2,
-}
-
-trip_sample_by_service = trip_enriched.sampleBy(
-    "service_type",
-    fractions=service_type_fractions,  # rate per service_type; missing keys are skipped
-    seed=42,  # fixed starting number so a rerun keeps the same sample
-)
-
-print("full counts by service_type:")
-trip_enriched.groupBy("service_type").count().orderBy("service_type").show(
-    truncate=False,
-)
-
-print("sampleBy counts by service_type (UNKNOWN omitted from fractions):")
-trip_sample_by_service.groupBy("service_type").count().orderBy("service_type").show(
-    truncate=False,
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Why can XL be missing from the sample counts?
-# MAGIC %md
-# MAGIC ### Why can `XL` be missing from the sample counts?
-# MAGIC
-# MAGIC `XL` is in the fractions map at **0.2**, and the full table has **12** XL
-# MAGIC trips. About 20% of 12 is roughly **2** rows — not a guaranteed count.
-# MAGIC
-# MAGIC With this seed, the sample kept **0** XL rows, so `groupBy` does not show
-# MAGIC that key.
-
-# COMMAND ----------
-
-# DBTITLE 1,How do we split rows into seeded subsets?
-# MAGIC %md
-# MAGIC ### 4c. How do we split rows into seeded subsets?
-# MAGIC
-# MAGIC Use **`trip_driver_assignment`** here because it has **100 rows** and no NULL
-# MAGIC trip dates, making the split easier to inspect.
-# MAGIC
-# MAGIC Sections **4a–4b** used **`trip_enriched`** because `sampleBy` needed the
-# MAGIC **`service_type`** column.
-# MAGIC
-# MAGIC With `randomSplit([0.7, 0.3], seed=...)`, Spark aims for an approximately
-# MAGIC **70/30 split**. The exact number of rows in each subset can vary.
-# MAGIC
-# MAGIC For the same input and seed, the split is reproducible.
-
-# COMMAND ----------
-
-# DBTITLE 1,Split assignment rows ~70/30 with seed 42
-subset_a, subset_b = trip_driver_assignment.randomSplit(
-    [0.7, 0.3],  # aim for about 70% then 30% (counts can vary)
-    seed=42,  # fixed starting number so a rerun keeps the same split
-)
-
-subset_a_rows = subset_a.count()
-subset_b_rows = subset_b.count()
-
-print(f"\nsubset A ({subset_a_rows} rows):")
-subset_a.select(
-    "driver_id",
-    "trip_id",
-    "trip_distance_miles",
-).show(5, truncate=False)
-
-print(f"subset B ({subset_b_rows} rows):")
-subset_b.select(
-    "driver_id",
-    "trip_id",
-    "trip_distance_miles",
-).show(5, truncate=False)
-
-# COMMAND ----------
-
 # DBTITLE 1,Summary
 # MAGIC %md
 # MAGIC ## Summary
@@ -660,7 +486,5 @@ subset_b.select(
 # MAGIC | Ties | `row_number` limits rows; `rank` can keep extra tied rows |
 # MAGIC | Deterministic order | Add a secondary sort key when ties must be resolved |
 # MAGIC | NULL ordering | Specify NULL placement when the sort column can be NULL |
-# MAGIC | Sampling | Use a seed when reproducibility matters |
 # MAGIC
-# MAGIC **Next:** Module 8 **`10 - Build KPI Tables`** — write three managed
-# MAGIC `kpi_*` Delta tables for Module 9.
+# MAGIC **Next:** `10 - Sampling`

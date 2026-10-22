@@ -1,490 +1,262 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 09 - Top-N per Group and NULL Ordering
 # MAGIC
-# MAGIC Top-N per group and NULL sort placement.
+# MAGIC In the previous lessons, you used window functions to rank rows, calculate running totals, and compare adjacent rows with `lag()` and `lead()`.
 # MAGIC
-# MAGIC `trip_enriched`, `trip_driver_assignment`.
+# MAGIC In this lesson, you will rank trips by `trip_distance_miles` to select the Top-N rows per group, handle ties at the cutoff, and control where `NULL` distances appear when sorting.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Select Top-N per group (including tie-selection policy)
-# MAGIC - Control NULL sort placement with `nullsFirst` / `nullsLast`
+# MAGIC - Select the Top-N rows per group by ranking with a window and filtering on the rank column.
+# MAGIC - Choose between `row_number()` and `rank()` when rows tie at the Top-N cutoff, and add a tie-breaker column for a consistent result.
+# MAGIC - Control `NULL` placement in `orderBy()` using `asc_nulls_last()`, `desc_nulls_first()`, and `desc_nulls_last()`.
+
 # COMMAND ----------
 
+# DBTITLE 1,Setup
 # MAGIC %md
-# MAGIC Keeping the "top N" rows sounds simple, but two decisions matter:
+# MAGIC ## Setup
 # MAGIC
-# MAGIC 1. **How should ties at the cutoff be handled?**
-# MAGIC 2. **Where should NULL values appear in the sort order?**
+# MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC This notebook extends the ranking pattern from Notebook **06** and shows
-# MAGIC how to control NULL placement in window `orderBy()`.
+# MAGIC This notebook uses `rideshare_dev.processed.trip_enriched` created in Module 7, **07 - Build Unified Curated Tables**, which contains 106 rows (one row per trip).
 # MAGIC
-# MAGIC ## What this notebook teaches
-# MAGIC
-# MAGIC | Section | Concept | Why it matters |
-# MAGIC |---|---|---|
-# MAGIC | 1 | Top-N + output grain | Rank, filter, then verify what one row represents |
-# MAGIC | 2 | Ties at the cutoff | Choose `row_number` vs `rank`; add a secondary sort when needed |
-# MAGIC | 3 | NULL sort placement | Control where NULLs appear in window `orderBy` |
-# MAGIC
-# MAGIC Run this module **01–08**, especially
-# MAGIC **`06 - Window Functions Fundamentals`**.
-# COMMAND ----------
-
-# DBTITLE 1,Setup — load both managed tables
-# MAGIC %md
-# MAGIC ## Setup — load both managed tables
-# MAGIC
-# MAGIC Shared schemas and inherited NULL details remain in Module 8
-# MAGIC **`01 - GroupBy and Basic Aggregations`**, **`02 - NULL Handling in Aggregations`**,
-# MAGIC and `docs/data/dataset-overview.md`.
-# MAGIC
-# MAGIC | DataFrame | Rows | Used for |
-# MAGIC |---|---:|---|
-# MAGIC | `trip_driver_assignment` | 100 | Sections 1–2 (Top-N) |
-# MAGIC | `trip_enriched` | 106 | Section 3 (NULL sort) |
-# MAGIC
-# MAGIC Notebook **06** introduced Top-2 per driver. Here we extend the same pattern
-# MAGIC to Top-3 and verify how filtering changes the output grain.
+# MAGIC Three trips (`103`, `105`, and `106`) have a `NULL` `trip_distance_miles`.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load and verify the managed tables
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-trip_enriched_table = "rideshare_dev.processed.trip_enriched"
-trip_driver_assignment_table = "rideshare_dev.processed.trip_driver_assignment"
+trip_enriched = spark.table("rideshare_dev.processed.trip_enriched")  # noqa: F821
 
-trip_enriched = spark.table(trip_enriched_table)  # noqa: F821
-trip_driver_assignment = spark.table(trip_driver_assignment_table)  # noqa: F821
-
-trip_enriched_rows = trip_enriched.count()
-trip_driver_assignment_rows = trip_driver_assignment.count()
-
-print(f"trip_enriched: {trip_enriched_rows} rows")
-print(f"trip_driver_assignment: {trip_driver_assignment_rows} rows")
+print("trip_enriched rows:", trip_enriched.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,How does Top-N change the output grain?
+# DBTITLE 1,Section 1 - Top-N per group
 # MAGIC %md
-# MAGIC ## 1. How does Top-N change the output grain?
+# MAGIC ## 1. Keep the Top-N rows per group
 # MAGIC
-# MAGIC A mileage review needs each driver's longest trips.
+# MAGIC **Question:** What are the 2 longest trips (`trip_distance_miles`) for each `service_type`?
 # MAGIC
-# MAGIC Before applying the Top-N filter, compare what one row represents before and
-# MAGIC after the filter:
-# MAGIC
-# MAGIC | Stage | Grain |
-# MAGIC |---|---|
-# MAGIC | Input | **100** rows — one per (`driver_id`, `trip_id`) |
-# MAGIC | After Top-3 filter | **36** rows — three trips per driver in this dataset |
-# MAGIC
-# MAGIC In Notebook **06**, Top-2 used `distance_row_number <= 2` (100 → **24**).
-# MAGIC Here the same `row_number` + `filter` pattern keeps the **top 3** longest
-# MAGIC trips per driver. Ranking keeps every row until `filter()` changes the
-# MAGIC grain.
+# MAGIC First rank trips by `trip_distance_miles` within each `service_type`, then filter to keep rows where the rank is `2` or less.
 
 # COMMAND ----------
 
-# DBTITLE 1,Rank distance within each driver
-distance_rank_window = Window.partitionBy("driver_id").orderBy(
-    F.col("trip_distance_miles").desc(),
+service_distance_window = Window.partitionBy("service_type").orderBy(
+    F.col("trip_distance_miles").desc()
 )
 
-driver_ranked = trip_driver_assignment.withColumn(
+ranked_by_distance = trip_enriched.withColumn(
     "distance_row_number",
-    F.row_number().over(distance_rank_window),
+    F.row_number().over(service_distance_window),
 )
 
-# COMMAND ----------
+top2_per_service = ranked_by_distance.filter(F.col("distance_row_number") <= 2)
 
-# DBTITLE 1,Keep top 3 trips per driver
-top3_trips_per_driver = driver_ranked.filter(
-    F.col("distance_row_number") <= 3,
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Inspect top 3 trips and confirm grain
-top3_trips_per_driver.select(
-    "driver_id",
-    "driver_name",
+top2_per_service.select(
+    "service_type",
     "trip_id",
     "trip_distance_miles",
-    "distance_row_number",  # derived column
-).orderBy(
-    "driver_id",
     "distance_row_number",
-).show(40, truncate=False)
-
-top3_trips_per_driver_rows = top3_trips_per_driver.count()
-print(f"Top-3 result: {top3_trips_per_driver_rows} rows (12 drivers × 3 trips)")
+).orderBy("service_type", "distance_row_number").show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Summarize miles among each driver's top 3 trips
+# DBTITLE 1,Section 2 - Ties at the Top-N cutoff
 # MAGIC %md
-# MAGIC After Top-N keeps the rows you need, a later aggregate can summarize them.
-# MAGIC Here: total miles among each driver's three longest trips — still no write.
+# MAGIC ## 2. Handle ties at the Top-N cutoff
+# MAGIC
+# MAGIC **Question:** In the `SHARED` service type, trips `20` and `96` are tied for 1st place at `8.87` miles. What happens when we ask for the **Top 1** longest `SHARED` trip?
+# MAGIC
+# MAGIC First, inspect the top 3 `SHARED` trips with both `row_number()` and `rank()`.
 
 # COMMAND ----------
 
-# DBTITLE 1,Total miles in the Top-3 set per driver
-top3_trips_per_driver.groupBy("driver_id").agg(
-    F.sum("trip_distance_miles").alias("top3_total_miles"),
-).orderBy("driver_id").show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,What happens when rows tie at the Top-N cutoff?
-# MAGIC %md
-# MAGIC ## 2. What happens when rows tie at the Top-N cutoff?
-# MAGIC
-# MAGIC Exact-N eligibility and "keep every trip tied at the cutoff" are different
-# MAGIC policies — for driver **D010**, trips **22** and **79** both have
-# MAGIC **8.81 miles**.
-# MAGIC
-# MAGIC Both trips are tied at the Top-4 cutoff. Because `row_number` assigns a
-# MAGIC unique position to every row, only one can receive position 4. If the
-# MAGIC requirement is to keep all rows tied at the cutoff, use a different ranking
-# MAGIC rule.
-# MAGIC
-# MAGIC | Cutoff | What it keeps |
-# MAGIC |---|---|
-# MAGIC | `row_number <= N` | **At most N** rows per group; ties do not increase the row count |
-# MAGIC | `rank <= N` | All rows with rank **N or lower**; a tie at the cutoff can keep **more than N** rows |  # noqa: E501
-# MAGIC
-# MAGIC Add a secondary sort key when an exact-N result must be
-# MAGIC **deterministic for the same input**.
-
-# COMMAND ----------
-
-# DBTITLE 1,Add row_number and rank on distance only
-policy_distance_window = Window.partitionBy("driver_id").orderBy(
-    F.col("trip_distance_miles").desc(),
+shared_ranked = (
+    trip_enriched
+    .filter(F.col("service_type") == "SHARED")
+    .withColumn("distance_row_number", F.row_number().over(service_distance_window))
+    .withColumn("distance_rank", F.rank().over(service_distance_window))
 )
 
-driver_policy_ranked = trip_driver_assignment.withColumn(
+shared_ranked.select(
+    "service_type",
+    "trip_id",
+    "trip_distance_miles",
     "distance_row_number",
-    F.row_number().over(policy_distance_window),
-).withColumn(
     "distance_rank",
-    F.rank().over(policy_distance_window),
-)
+).orderBy("distance_row_number").show(3, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Inspect D010 before the cutoff
-driver_policy_ranked.filter(
-    F.col("driver_id") == "D010",
-).select(
-    "driver_id",
+# MAGIC %md
+# MAGIC ### Filter with `row_number() <= 1` (keeps strictly 1 row)
+
+# COMMAND ----------
+
+shared_ranked.filter(F.col("distance_row_number") <= 1).select(
+    "service_type",
     "trip_id",
     "trip_distance_miles",
-    "distance_row_number",  # derived column
-    "distance_rank",  # derived column
-).orderBy(
     "distance_row_number",
 ).show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Compare row_number <= 4 vs rank <= 4 on D010
-d010_row_number_top4 = driver_policy_ranked.filter(
-    (F.col("driver_id") == "D010")
-    & (F.col("distance_row_number") <= 4),
-)
-d010_rank_top4 = driver_policy_ranked.filter(
-    (F.col("driver_id") == "D010")
-    & (F.col("distance_rank") <= 4),
-)
+# MAGIC %md
+# MAGIC ### Filter with `rank() <= 1` (keeps all rows tied for 1st place)
 
-d010_row_number_top4_rows = d010_row_number_top4.count()
-d010_rank_top4_rows = d010_rank_top4.count()
+# COMMAND ----------
 
-print(
-    f"D010: row_number keeps {d010_row_number_top4_rows} rows, "
-    f"rank keeps {d010_rank_top4_rows} — the tie adds an extra row"
-)
-
-d010_rank_top4.select(
-    "driver_id",
+shared_ranked.filter(F.col("distance_rank") <= 1).select(
+    "service_type",
     "trip_id",
     "trip_distance_miles",
-    "distance_row_number",  # derived column
-    "distance_rank",  # derived column
-).orderBy(
-    "distance_row_number",
+    "distance_rank",
 ).show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Compare both cutoffs across all 12 drivers
-fleet_row_number_top4 = driver_policy_ranked.filter(
-    F.col("distance_row_number") <= 4,
-)
-fleet_rank_top4 = driver_policy_ranked.filter(
-    F.col("distance_rank") <= 4,
-)
-
-fleet_row_number_top4_rows = fleet_row_number_top4.count()
-fleet_rank_top4_rows = fleet_rank_top4.count()
-
-print(
-    f"fleet totals — row_number <= 4: {fleet_row_number_top4_rows}; "
-    f"rank <= 4: {fleet_rank_top4_rows}"
-)
-
-print("rows kept per driver — row_number <= 4:")
-fleet_row_number_top4.groupBy("driver_id").count().orderBy("driver_id").show(
-    truncate=False,
-)
-
-print("rows kept per driver — rank <= 4:")
-fleet_rank_top4.groupBy("driver_id").count().orderBy("driver_id").show(
-    truncate=False,
-)
+# MAGIC %md
+# MAGIC ### Add a tie-breaker so `row_number()` returns a consistent result
+# MAGIC
+# MAGIC Because trips `20` and `96` have the same distance (`8.87` miles), `row_number()` has no rule for which trip gets `1` and which gets `2`. Add `F.col("trip_id").asc()` as a second `orderBy()` column so trip `20` always gets `distance_row_number = 1`.
 
 # COMMAND ----------
 
-# DBTITLE 1,Make the Top-N cut deterministic with a secondary sort
-stable_distance_window = Window.partitionBy("driver_id").orderBy(
+consistent_distance_window = Window.partitionBy("service_type").orderBy(
     F.col("trip_distance_miles").desc(),
     F.col("trip_id").asc(),
 )
 
-driver_stable_ranked = trip_driver_assignment.withColumn(
-    "distance_row_number",
-    F.row_number().over(stable_distance_window),
+(
+    trip_enriched
+    .filter(F.col("service_type") == "SHARED")
+    .withColumn("distance_row_number", F.row_number().over(consistent_distance_window))
+    .filter(F.col("distance_row_number") <= 1)
+    .select("service_type", "trip_id", "trip_distance_miles", "distance_row_number")
+    .show(truncate=False)
 )
 
-driver_stable_ranked.filter(
-    F.col("driver_id") == "D010",
-).select(
-    "driver_id",
-    "trip_id",
-    "trip_distance_miles",
-    "distance_row_number",  # derived column
-).orderBy(
-    "distance_row_number",
-).show(truncate=False)
-
 # COMMAND ----------
 
-# DBTITLE 1,What to remember when trips tie at Top-N
+# DBTITLE 1,Section 3 - NULL sort placement
 # MAGIC %md
-# MAGIC ### What to remember when trips tie at Top-N
+# MAGIC ## 3. Control `NULL` placement when sorting
 # MAGIC
-# MAGIC First decide how many rows to keep. For D010 at Top-4 (trips 22 and 79 both
-# MAGIC 8.81 miles):
+# MAGIC **Question:** In the `STANDARD` service type, trips `103`, `105`, and `106` have a `NULL` `trip_distance_miles`. Where do those `NULL` rows appear when we rank from shortest to longest (`asc()`) vs longest to shortest (`desc()`)?
 # MAGIC
-# MAGIC - `row_number <= 4` keeps exactly **4** rows. Only one of the tied trips
-# MAGIC   receives the final slot.
-# MAGIC - `rank <= 4` keeps every row with `distance_rank <= 4`. Because both trips
-# MAGIC   share rank **4**, both are kept so that the result can contain more than
-# MAGIC   **4** rows.
-# MAGIC
-# MAGIC Across the full fleet, `row_number <= 4` always returns **48** rows
-# MAGIC (12 drivers × 4 trips). With `rank <= 4`, the row count increases whenever
-# MAGIC multiple trips are tied at the cutoff rank.
-# MAGIC
-# MAGIC If the requirement is exactly N rows per driver, add a secondary sort such
-# MAGIC as `trip_id.asc()`. This gives Spark an explicit and repeatable way to
-# MAGIC choose between tied rows for the same input.
-# MAGIC
-# MAGIC The secondary sort does not preserve both tied trips. It only decides which
-# MAGIC one gets the final slot.
-
-# COMMAND ----------
-
-# DBTITLE 1,How does NULL placement affect window ordering?
-# MAGIC %md
-# MAGIC ## 3. How does NULL placement affect window ordering?
-# MAGIC
-# MAGIC Undated trips and missing tips change who appears first in an ordered
-# MAGIC borough report.
-# MAGIC
-# MAGIC Adding `row_number` changes the order position, not the number of rows:
-# MAGIC the result still has **106 trips**.
-# MAGIC
-# MAGIC Spark's default NULL placement depends on sort direction. Column helpers
-# MAGIC make the intended placement explicit:
-# MAGIC
-# MAGIC | Method | Non-NULL order | NULLs |
+# MAGIC | Method | Sort order | `NULL` placement |
 # MAGIC |---|---|---|
-# MAGIC | `asc()` | smallest → largest | **first** (default) |
-# MAGIC | `asc_nulls_last()` | smallest → largest | **last** |
-# MAGIC | `desc()` | largest → smallest | **last** (default) |
-# MAGIC | `desc_nulls_first()` | largest → smallest | **first** |
-# MAGIC | `desc_nulls_last()` | largest → smallest | **last** (same as `desc()`) |
+# MAGIC | `asc()` | Smallest to largest | **First** (default) |
+# MAGIC | `asc_nulls_last()` | Smallest to largest | **Last** |
+# MAGIC | `desc()` | Largest to smallest | **Last** (default) |
+# MAGIC | `desc_nulls_first()` | Largest to smallest | **First** |
+# MAGIC | `desc_nulls_last()` | Largest to smallest | **Last** (explicit) |
 # MAGIC
-# MAGIC Prefer the helper when NULL placement matters so the order is visible in
-# MAGIC the code.
+# MAGIC ### Default `asc()` — `NULL` distances appear first
+# MAGIC
+# MAGIC If you want the shortest `STANDARD` trips and use `.asc()`, the 3 `NULL` rows take ranks `1`, `2`, and `3`.
 
 # COMMAND ----------
 
-# DBTITLE 1,Default asc — NULLs first on trip_date
-default_date_window = Window.partitionBy("pickup_borough").orderBy(
-    F.col("trip_date").asc(),
+asc_default_window = Window.partitionBy("service_type").orderBy(
+    F.col("trip_distance_miles").asc(),
+    F.col("trip_id").asc(),
 )
 
-trip_date_default_ordered = trip_enriched.withColumn(
-    "date_row_number",
-    F.row_number().over(default_date_window),
+(
+    trip_enriched
+    .filter(F.col("service_type") == "STANDARD")
+    .withColumn("distance_row_number", F.row_number().over(asc_default_window))
+    .select("service_type", "trip_id", "trip_distance_miles", "distance_row_number")
+    .orderBy("distance_row_number")
+    .show(6, truncate=False)
 )
-
-trip_date_default_ordered.filter(
-    F.col("pickup_borough") == "Manhattan",
-).select(
-    "pickup_borough",
-    "trip_id",
-    "trip_date",
-    "date_row_number",  # derived column
-).orderBy(
-    "date_row_number",
-).show(15, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,asc_nulls_last — dated trips first
-nulls_last_date_window = Window.partitionBy("pickup_borough").orderBy(
-    F.col("trip_date").asc_nulls_last(),
-)
-
-trip_date_nulls_last = trip_enriched.withColumn(
-    "date_row_number",
-    F.row_number().over(nulls_last_date_window),
-)
-
-trip_date_nulls_last.filter(
-    F.col("pickup_borough") == "Manhattan",
-).select(
-    "pickup_borough",
-    "trip_id",
-    "trip_date",
-    "date_row_number",  # derived column
-).orderBy(
-    "date_row_number",
-).show(15, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Interpret the ascending NULL fix
 # MAGIC %md
-# MAGIC Manhattan undated trips are **101**, **104**, and **106**.
+# MAGIC ### `asc_nulls_last()` — shortest known distances appear first
 # MAGIC
-# MAGIC - Default `asc()`: those trips appear among the **earliest**
-# MAGIC   `date_row_number` values.
-# MAGIC - `asc_nulls_last()`: the same trips appear at the **end** of the borough
-# MAGIC   ordering.
+# MAGIC Use `asc_nulls_last()` to push `NULL` distances to the bottom so real shortest trips rank first.
 
 # COMMAND ----------
 
-# DBTITLE 1,What changes with desc_nulls_first?
+asc_nulls_last_window = Window.partitionBy("service_type").orderBy(
+    F.col("trip_distance_miles").asc_nulls_last(),
+    F.col("trip_id").asc(),
+)
+
+(
+    trip_enriched
+    .filter(F.col("service_type") == "STANDARD")
+    .withColumn("distance_row_number", F.row_number().over(asc_nulls_last_window))
+    .select("service_type", "trip_id", "trip_distance_miles", "distance_row_number")
+    .orderBy("distance_row_number")
+    .show(6, truncate=False)
+)
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ### What changes with `desc_nulls_first()`?
+# MAGIC ### `desc_nulls_last()` — longest known distances appear first
 # MAGIC
-# MAGIC Trip **106** has NULL `tip_amount` in Manhattan (trip **103**'s NULL tip
-# MAGIC is in Queens).
-# MAGIC
-# MAGIC The next cells compare two descending tip orders, then show the explicit
-# MAGIC helper for a "highest known tip" ranking:
-# MAGIC
-# MAGIC - Default `desc()`: NULL tips stay **last**.
-# MAGIC - `desc_nulls_first()`: NULL tips move **first**, ahead of known tip values.
-# MAGIC - `desc_nulls_last()`: same NULL placement as default `desc()`, written
-# MAGIC   explicitly so known tips rank before NULLs.
+# MAGIC Both `desc()` and `desc_nulls_last()` place `NULL` distances at the bottom.
 
 # COMMAND ----------
 
-# DBTITLE 1,Compare tip desc default vs desc_nulls_first — Manhattan
-default_tip_window = Window.partitionBy("pickup_borough").orderBy(
-    F.col("tip_amount").desc(),
-)
-nulls_first_tip_window = Window.partitionBy("pickup_borough").orderBy(
-    F.col("tip_amount").desc_nulls_first(),
+desc_nulls_last_window = Window.partitionBy("service_type").orderBy(
+    F.col("trip_distance_miles").desc_nulls_last(),
+    F.col("trip_id").asc(),
 )
 
-tip_desc_default = trip_enriched.withColumn(
-    "tip_row_number",
-    F.row_number().over(default_tip_window),
+(
+    trip_enriched
+    .filter(F.col("service_type") == "STANDARD")
+    .withColumn("distance_row_number", F.row_number().over(desc_nulls_last_window))
+    .select("service_type", "trip_id", "trip_distance_miles", "distance_row_number")
+    .orderBy("distance_row_number")
+    .show(6, truncate=False)
 )
-tip_desc_nulls_first = trip_enriched.withColumn(
-    "tip_row_number",
-    F.row_number().over(nulls_first_tip_window),
-)
-
-print("default tip desc (NULLs last) — Manhattan:")
-tip_desc_default.filter(
-    F.col("pickup_borough") == "Manhattan",
-).select(
-    "pickup_borough",
-    "trip_id",
-    "tip_amount",
-    "tip_row_number",  # derived column
-).orderBy(
-    "tip_row_number",
-).show(10, truncate=False)
-
-print("tip desc_nulls_first — Manhattan:")
-tip_desc_nulls_first.filter(
-    F.col("pickup_borough") == "Manhattan",
-).select(
-    "pickup_borough",
-    "trip_id",
-    "tip_amount",
-    "tip_row_number",  # derived column
-).orderBy(
-    "tip_row_number",
-).show(10, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,desc_nulls_last — highest known tip first
-nulls_last_tip_window = Window.partitionBy("pickup_borough").orderBy(
-    F.col("tip_amount").desc_nulls_last(),
-)
-
-tip_desc_nulls_last = trip_enriched.withColumn(
-    "tip_row_number",
-    F.row_number().over(nulls_last_tip_window),
-)
-
-print("tip desc_nulls_last — Manhattan:")
-tip_desc_nulls_last.filter(
-    F.col("pickup_borough") == "Manhattan",
-).select(
-    "pickup_borough",
-    "trip_id",
-    "tip_amount",
-    "tip_row_number",  # derived column
-).orderBy(
-    "tip_row_number",
-).show(10, truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Section 3 rule of thumb
 # MAGIC %md
-# MAGIC **Rule of thumb:** if an ordered column can contain NULLs, name the NULL
-# MAGIC placement in `orderBy` (`asc_nulls_last()`, `desc_nulls_last()`, and so
-# MAGIC on) so the intended ordering is visible in the code.
+# MAGIC ### `desc_nulls_first()` — `NULL` distances appear first
 
 # COMMAND ----------
 
-# DBTITLE 1,Summary
+desc_nulls_first_window = Window.partitionBy("service_type").orderBy(
+    F.col("trip_distance_miles").desc_nulls_first(),
+    F.col("trip_id").asc(),
+)
+
+(
+    trip_enriched
+    .filter(F.col("service_type") == "STANDARD")
+    .withColumn("distance_row_number", F.row_number().over(desc_nulls_first_window))
+    .select("service_type", "trip_id", "trip_distance_miles", "distance_row_number")
+    .orderBy("distance_row_number")
+    .show(6, truncate=False)
+)
+
+# COMMAND ----------
+
+# DBTITLE 1,Key Takeaways
 # MAGIC %md
-# MAGIC ## Summary
+# MAGIC ## Key Takeaways
 # MAGIC
-# MAGIC | Idea | Takeaway |
-# MAGIC |---|---|
-# MAGIC | Top-N | Rank first, then filter |
-# MAGIC | Ties | `row_number` limits rows; `rank` can keep extra tied rows |
-# MAGIC | Deterministic order | Add a secondary sort key when ties must be resolved |
-# MAGIC | NULL ordering | Specify NULL placement when the sort column can be NULL |
+# MAGIC - Rank rows within each group using a window, then `.filter()` on the rank column to keep the Top-N rows.
+# MAGIC - `row_number() <= N` keeps at most `N` rows per group; `rank() <= N` keeps all rows tied at `N`.
+# MAGIC - Add a unique column (like `trip_id.asc()`) to `orderBy()` to break ties consistently with `row_number()`.
+# MAGIC - By default, `asc()` puts `NULL`s first and `desc()` puts `NULL`s last. Use `asc_nulls_last()`, `desc_nulls_first()`, or `desc_nulls_last()` to change where `NULL`s appear.
 # MAGIC
 # MAGIC **Next:** `10 - Sampling`

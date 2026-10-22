@@ -18,7 +18,7 @@ By the end of this module, you'll be able to:
 - Control NULL sort placement with **`nullsFirst` / `nullsLast`**
 - Select **Top-N per group** (including tie-selection policy) and draw
   reproducible samples with **`sample`** / **`sampleBy`** / **`randomSplit`**
-- Apply the module patterns in `09 - Build KPI Tables.py` to write three
+- Apply the module patterns in `11 - Build KPI Tables.py` to write three
   managed `kpi_*` tables for Module 9
 
 ## Prerequisites
@@ -30,7 +30,7 @@ Complete Module 7 notebooks **`01`–`07`**. You need:
 | `rideshare_dev.processed.trip_enriched` | 106 — one per `trip_id`; 16 columns | Module 7 `07 - Build Unified Curated Tables.py` |
 | `rideshare_dev.processed.trip_driver_assignment` | 100 — one per (`driver_id`, `trip_id`); 12 drivers, trips 1–100; 13 columns | Module 7 `07 - Build Unified Curated Tables.py` |
 
-`trip_enriched` is the primary source for Notebooks **01–08**.
+`trip_enriched` is the primary source for Notebooks **01–10**.
 `trip_driver_assignment` appears where a **1:M** grain (many trips per driver)
 makes a point that trip grain cannot. `01 - GroupBy and Basic Aggregations.py`
 loads `trip_enriched` and summarizes it by `service_type`.
@@ -40,7 +40,7 @@ notebooks load without re-describing it.
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
 Module 7 `02 - Join Cardinality, NULL Keys, and Cross Joins.py` (grain and key
 profiling). `Window` + `row_number` dedup is introduced in **06**; Top-N
-reuses the pattern in **08**.
+reuses the pattern in **09**.
 
 Does **not** read `/Volumes/rideshare_dev/processed/output_files/practice/`
 or Module 6 `/Volumes/rideshare_dev/processed/output_files/curated/` — the
@@ -52,7 +52,7 @@ Schemas, inherited NULLs, and group-key values:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 KPI column formulas: see Shared paths and assets below.
 
-`09 - Build KPI Tables.py` writes Unity Catalog managed Delta tables with
+`11 - Build KPI Tables.py` writes Unity Catalog managed Delta tables with
 `.mode("overwrite").saveAsTable(...)`. Module 9
 `04 - SQL Windows and QUALIFY.py` reads the daily and zone tables. Module 9
 `06 - End-to-End SQL Pipeline.py` rebuilds all three KPI contracts in Spark
@@ -72,7 +72,7 @@ does **not** remove KPI tables.
 
 ## Shared paths and assets
 
-Module-wide reused KPI formulas (consumed by notebook **09** and by Module 9).
+Module-wide reused KPI formulas (consumed by notebook **11** and by Module 9).
 
 ### `kpi_daily_trip_summary` columns
 
@@ -265,12 +265,12 @@ Windows preserve input rows — contrast with `groupBy`.
 ### Learning objectives
 
 - Build windows for ranking and partition-only aggregates
-- Preview Top-2 filter-after-rank (full Top-N → **08**)
+- Preview Top-2 filter-after-rank (full Top-N → **09**)
 
 ### Lesson flow
 
 `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2
-filter-after-rank preview → **08**.
+filter-after-rank preview → **09**.
 
 ### Expected state
 
@@ -349,7 +349,7 @@ selection policy (`row_number <= N` vs `rank <= N`, secondary sort);
 
 ### Expected state
 
-- Input: `trip_enriched`, `trip_driver_assignment`
+- Input: `trip_enriched`
 - Output: none (no write)
 
 ### Next
@@ -374,7 +374,7 @@ into weighted subsets with a seed.
 
 ### Expected state
 
-- Input: `trip_enriched`, `trip_driver_assignment`
+- Input: `trip_enriched`
 - Output: none (no write)
 
 ### Next
@@ -414,5 +414,5 @@ Module 9 — Spark SQL and DataFrame Interoperability.
   - **`SELECT`** on **`rideshare_dev.processed.trip_enriched`** and
     **`rideshare_dev.processed.trip_driver_assignment`**
   - **`CREATE TABLE`** on **`rideshare_dev.processed`**
-    (`09 - Build KPI Tables.py` only)
+    (`11 - Build KPI Tables.py` only)
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here

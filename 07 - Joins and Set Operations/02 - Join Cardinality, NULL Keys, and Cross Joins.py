@@ -6,7 +6,7 @@
 # MAGIC %md
 # MAGIC # 02 - Join Cardinality, NULL Keys, and Cross Joins
 # MAGIC
-# MAGIC Notebook 01 showed how to write a join. This notebook explains how many
+# MAGIC **01 - Introduction to PySpark Joins** showed how to write a join. This notebook explains how many
 # MAGIC rows a join returns, and why.
 # MAGIC
 # MAGIC ## Learning objectives

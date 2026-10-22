@@ -8,7 +8,7 @@
 # MAGIC
 # MAGIC - Clear `practice/` without touching `curated/`
 # MAGIC - Clear `curated/` (wide blast radius)
-# MAGIC - Clear landing and recopy from notebook **01**
+# MAGIC - Clear landing and recopy from **01 - Unity Catalog Volumes and Data Landing**
 # MAGIC - Fully tear down catalog, external location, and ADLS folder while leaving the
 # MAGIC   storage credential in place
 
@@ -125,7 +125,7 @@ RESET_LANDING_FILES = False  # ← Change to True, then run this cell
 
 if RESET_LANDING_FILES:
     clear_volume_contents(landing_volume)
-    print("\n✓ Done. Re-run folder creation and file copy cells in Notebook 01.")
+    print("\n✓ Done. Re-run folder creation and file copy cells in 01 - Unity Catalog Volumes and Data Landing.")
     print("\nRemember: set RESET_LANDING_FILES back to False.")
 else:
     print("Skipped (RESET_LANDING_FILES = False).")
@@ -177,8 +177,8 @@ if FULL_PROJECT_TEARDOWN:
     spark.sql("DROP EXTERNAL LOCATION IF EXISTS el_rideshare_dev FORCE")
     print("  Done.")
 
-    print("\n✓ Teardown complete. Run Notebook 01 from the top to rebuild.")
-    print(f"  Step 1 of Notebook 01 recreates the '{adls_folder}' folder in the Azure Portal.")
+    print("\n✓ Teardown complete. Run 01 - Unity Catalog Volumes and Data Landing from the top to rebuild.")
+    print(f"  Step 1 of 01 - Unity Catalog Volumes and Data Landing recreates the '{adls_folder}' folder in the Azure Portal.")
     print("\nRemember: set FULL_PROJECT_TEARDOWN back to False.")
 else:
     print("Skipped (FULL_PROJECT_TEARDOWN = False).")

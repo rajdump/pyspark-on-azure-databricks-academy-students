@@ -22,8 +22,8 @@
 # MAGIC
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC This notebook uses the `trip_driver_assignment` table created in Module 7
-# MAGIC (Notebook `07`). Each row represents one driver-trip assignment: 100 assignments
+# MAGIC This notebook uses the `trip_driver_assignment` table created in Module 7,
+# MAGIC **07 - Build Unified Curated Tables**. Each row represents one driver-trip assignment: 100 assignments
 # MAGIC across 12 drivers.
 # MAGIC
 # MAGIC The examples use drivers **D001** and **D010** only: 17 assignments.

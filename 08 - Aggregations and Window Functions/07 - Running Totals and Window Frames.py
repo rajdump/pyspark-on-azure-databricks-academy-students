@@ -26,7 +26,7 @@
 # MAGIC
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC This notebook uses `rideshare_dev.processed.trip_enriched` filtered to **Brooklyn** and **Manhattan** trips on **`2026-03-01`** and **`2026-03-02`** (9 rows: 2 in Brooklyn and 7 in Manhattan).
+# MAGIC This notebook uses `rideshare_dev.processed.trip_enriched`, created in Module 7, **07 - Build Unified Curated Tables**, filtered to **Brooklyn** and **Manhattan** trips on **`2026-03-01`** and **`2026-03-02`** (9 rows: 2 in Brooklyn and 7 in Manhattan).
 
 # COMMAND ----------
 

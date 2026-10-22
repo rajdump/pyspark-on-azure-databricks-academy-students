@@ -24,7 +24,7 @@
 # MAGIC
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC This notebook uses the `trip_enriched` table created in Module 7 (Notebook `07`).
+# MAGIC This notebook uses the `trip_enriched` table created in Module 7, **07 - Build Unified Curated Tables**.
 # MAGIC It contains **one row per trip**: a total of 106 trips.
 
 # COMMAND ----------

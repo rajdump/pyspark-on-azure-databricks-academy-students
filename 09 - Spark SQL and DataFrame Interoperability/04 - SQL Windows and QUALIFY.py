@@ -22,7 +22,8 @@
 # MAGIC This notebook uses two KPI tables created in Module 8.
 # MAGIC
 # MAGIC Module 8 `06 - Window Functions Fundamentals` introduced ranking windows,
-# MAGIC and `07 - Running Totals and Lag and Lead` covered running totals and `LAG`.
+# MAGIC `07 - Running Totals and Window Frames` covered running totals, and
+# MAGIC `08 - Lag and Lead` covered `LAG`.
 # MAGIC Here we apply those patterns with Spark SQL.
 # MAGIC
 # MAGIC The `kpi_zone_performance` table contains one row for each combination of

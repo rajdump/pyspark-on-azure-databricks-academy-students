@@ -61,7 +61,7 @@ print(f"practice_output_path = {practice_output_path}")
 # MAGIC %md
 # MAGIC ## 1. Source path
 # MAGIC
-# MAGIC **`payment.avro`** was copied into the landing volume in Notebook 01.
+# MAGIC **`payment.avro`** was copied into the landing volume in **01 - Unity Catalog Volumes and Data Landing**.
 
 # COMMAND ----------
 

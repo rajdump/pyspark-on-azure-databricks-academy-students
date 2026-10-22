@@ -30,7 +30,7 @@
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
 # MAGIC This notebook uses `rideshare_dev.processed.trip_enriched`, created in
-# MAGIC Module 07. Each row represents one trip, and the table contains 106 trips.
+# MAGIC Module 7, **07 - Build Unified Curated Tables**. Each row represents one trip, and the table contains 106 trips.
 
 # COMMAND ----------
 

@@ -199,7 +199,7 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC The sample is not seeded here, so re-runs can differ. The percentage is
 # MAGIC approximate, not an exact row count.
 # MAGIC
-# MAGIC Module 8 `08 - Top-N per Group and Sampling` used seeded `.sample()`
+# MAGIC Module 8 `10 - Sampling` used seeded `.sample()`
 # MAGIC when you need the same draw again.
 # MAGIC
 # MAGIC **Expected:** roughly **25–30 rows** from this 106-row table.

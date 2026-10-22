@@ -29,7 +29,7 @@
 # MAGIC
 # MAGIC Attach **all-purpose compute**.
 # MAGIC
-# MAGIC This notebook uses the `trip_enriched` table created in Module 7 (Notebook 07), which contains 106 rows, one row per trip.
+# MAGIC This notebook uses the `trip_enriched` table created in Module 7, **07 - Build Unified Curated Tables**, which contains 106 rows, one row per trip.
 # MAGIC
 # MAGIC Six trips (`101`–`106`) have no `trip_date`. The notebook keeps the 100 dated trips and calculates the total `base_fare_amount` for each day.
 
